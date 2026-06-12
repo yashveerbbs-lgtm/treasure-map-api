@@ -1,82 +1,94 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treasure Map Tracker</title>
+    <title>Geocatcher - Map</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-        #map { height: 100vh; width: 100vw; }
-        .riddle-popup { font-size: 14px; width: 200px; }
-        .riddle-popup input { width: 90%; margin-top: 5px; padding: 5px; }
-        .riddle-popup button { margin-top: 8px; width: 100%; padding: 5px; background: #28a745; color: white; border: none; cursor: pointer; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+        .loading-title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            font-weight: bold;
+            color: #333;
+        }
     </style>
 </head>
 <body>
 
+    <div class="loading-title">?? Geocatcher Live Radar</div>
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize the map centered globally
-        const map = L.map('map').setView([20.5937, 78.9629], 5);
+        // 1. Initialize the Map canvas centered globally
+        const map = L.map('map').setView([20.0, 0.0], 2);
 
-        // Load open-source map tiles
+        // 2. Load free open-source map design tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Fetch existing treasures from Python backend on load
-        async function loadTreasures() {
-            const response = await fetch('/api/treasures');
-            const treasures = await response.json();
-            
-            treasures.forEach(t => {
-                L.marker([t.lat, t.lng]).addTo(map)
-                    .bindPopup(`<b>????? Treasure Found!</b><br>Riddle: ${t.riddle}`);
+        // 3. Try to locate the player's live device location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                
+                // Center map automatically to player's neighborhood
+                map.setView([userLat, userLng], 13);
+
+                // Add a unique blue circle representing the actual player
+                L.circle([userLat, userLng], {
+                    color: '#007bff',
+                    fillColor: '#007bff',
+                    fillOpacity: 0.4,
+                    radius: 30
+                }).addTo(map).bindPopup("<b>You are here!</b>").openPopup();
             });
         }
-        loadTreasures();
 
-        // Click on map to drop a pin and save a new treasure riddle
-        map.on('click', function(e) {
-            const lat = e.latlng.lat;
-            const lng = e.latlng.lng;
+        // 4. Connect to your live backend database endpoint
+        fetch('/api/treasures')
+            .then(response => response.json())
+            .then(treasures => {
+                treasures.forEach(treasure => {
+                    // Pull coordinates and riddle text safely
+                    const lat = treasure.lat;
+                    const lng = treasure.lng;
+                    const riddle = treasure.riddle;
 
-            const popupContent = `
-                <div class="riddle-popup">
-                    <b>Hide a Treasure Here!</b><br>
-                    <input type="text" id="riddleInput" placeholder="Enter riddle or clue...">
-                    <button onclick="saveTreasure(${lat}, ${lng})">Save to Cloud</button>
-                </div>
-            `;
-
-            L.popup()
-                .setLatLng(e.latlng)
-                .setContent(popupContent)
-                .openOn(map);
-        });
-
-        // Send data to Flask backend -> Supabase
-        async function saveTreasure(lat, lng) {
-            const riddle = document.getElementById('riddleInput').value;
-            if (!riddle) return alert('Please enter a riddle first!');
-
-            const response = await fetch('/api/treasures', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat, lng, riddle })
-            });
-
-            if (response.ok) {
-                L.marker([lat, lng]).addTo(map)
-                    .bindPopup(`<b>Treasure Saved!</b><br>Riddle: ${riddle}`);
-                map.closePopup();
-            } else {
-                alert('Error saving treasure to cloud.');
-            }
-        }
+                    if (lat && lng) {
+                        // Drop a visual game pin onto the map layout
+                        L.marker([lat, lng])
+                            .addTo(map)
+                            .bindPopup(`
+                                <div style="font-size:14px; text-align:center;">
+                                    <b>????? Hidden Cache</b><br><br>
+                                    <i>"${riddle}"</i>
+                                </div>
+                            `);
+                    }
+                });
+            })
+            .catch(err => console.error("Error loading geocaches:", err));
     </script>
 </body>
 </html>
