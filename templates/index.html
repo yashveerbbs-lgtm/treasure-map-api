@@ -15,12 +15,11 @@
         }
         #map {
             width: 100%;
-            height: 70vh; /* Map takes up top 70% */
+            height: 70vh;
         }
-        /* Gaming Radar Dashboard Panel */
         #radar-panel {
             width: 100%;
-            height: 30vh; /* Dashboard takes up bottom 30% */
+            height: 30vh;
             background: #1a1a2e;
             color: #fff;
             display: flex;
@@ -40,9 +39,7 @@
             margin-bottom: 8px;
             text-transform: uppercase;
             letter-spacing: 1px;
-            box-shadow: 0 0 15px rgba(255,255,255,0.1);
         }
-        /* Proximity Colors */
         .freezing { background-color: #007bff; text-shadow: 0 0 8px #0056b3; }
         .warm { background-color: #fd7e14; text-shadow: 0 0 8px #d94111; }
         .burning { background-color: #dc3545; animation: pulse 1s infinite; text-shadow: 0 0 8px #9c1c24; }
@@ -57,6 +54,12 @@
             color: #a0a0a5;
             font-style: italic;
             max-width: 80%;
+        }
+        .admin-note {
+            font-size: 11px;
+            color: #64ffda;
+            margin-top: 5px;
+            opacity: 0.8;
         }
         @keyframes pulse {
             0% { transform: scale(1); box-shadow: 0 0 10px #dc3545; }
@@ -73,11 +76,11 @@
         <div id="radar-status" class="status-badge freezing">?? Initializing Radar...</div>
         <div id="radar-distance" class="distance-text">Searching for satellite GPS...</div>
         <div id="radar-hint" class="riddle-hint">Walk around your area to pick up cache anomalies.</div>
+        <div class="admin-note">??? Developer Mode: Double-click anywhere on the map to drop a new Cache!</div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Setup global map canvas
         const map = L.map('map').setView([20.0, 0.0], 2);
         let userLocationMarker = null;
         let allTreasures = [];
@@ -86,26 +89,48 @@
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 2. Haversine Math Formula: Calculates precise distance in meters between two coordinates
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371000; // Radius of the Earth in meters
+            const R = 6371000; 
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
             const a = 
                 Math.sin(dLat/2) * Math.sin(dLat/2) +
                 Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; // Distance in meters
+            return R * c; 
         }
 
-        // 3. Core Engine: Evaluates player location against closest database items
+        // Fetch all cache items from your server
+        function loadCachesFromDatabase() {
+            fetch('/api/treasures')
+                .then(response => response.json())
+                .then(treasures => {
+                    allTreasures = treasures;
+                    
+                    // Clear old pins before rendering fresh ones
+                    map.eachLayer((layer) => {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                        }
+                    });
+
+                    treasures.forEach(treasure => {
+                        if (treasure.lat && treasure.lng) {
+                            L.marker([treasure.lat, treasure.lng])
+                                .addTo(map)
+                                .bindPopup(`<b>????? Cache Target</b><br>${treasure.riddle}`);
+                        }
+                    });
+                })
+                .catch(err => console.error("Database fetch exception error:", err));
+        }
+
         function updateRadar(userLat, userLng) {
             if (allTreasures.length === 0) return;
 
             let closestTreasure = null;
             let shortestDistance = Infinity;
 
-            // Find which cache is closest physically to the player
             allTreasures.forEach(treasure => {
                 const distance = calculateDistance(userLat, userLng, treasure.lat, treasure.lng);
                 if (distance < shortestDistance) {
@@ -114,21 +139,21 @@
                 }
             });
 
-            // Update user text display layout
             const distanceDiv = document.getElementById('radar-distance');
             const statusDiv = document.getElementById('radar-status');
             const hintDiv = document.getElementById('radar-hint');
 
+            if (shortestDistance === Infinity) return;
+
             distanceDiv.innerText = `Closest Cache: ${Math.round(shortestDistance)} meters away`;
             hintDiv.innerText = `Current Area Riddle: "${closestTreasure.riddle}"`;
 
-            // Change Radar game states based on meter calculations
-            statusDiv.className = "status-badge"; // clear old states
+            statusDiv.className = "status-badge"; 
             if (shortestDistance <= 20) {
                 statusDiv.innerText = "?? Burning Hot! ??";
                 statusDiv.classList.add("burning");
-            } else if (shortestDistance <= 150) {
-                statusDiv.innerText = "?? Getting Warm ??";
+            } else if (shortestDistance <= 250) {
+                statusDiv.innerText = "? Getting Warm ?";
                 statusDiv.classList.add("warm");
             } else {
                 statusDiv.innerText = "?? Freezing Cold ??";
@@ -136,47 +161,56 @@
             }
         }
 
-        // 4. Download Cache data array from your live Render API
-        fetch('/api/treasures')
-            .then(response => response.json())
-            .then(treasures => {
-                allTreasures = treasures;
-                
-                // Drop visible Pins onto map for debugging references
-                treasures.forEach(treasure => {
-                    if (treasure.lat && treasure.lng) {
-                        L.marker([treasure.lat, treasure.lng])
-                            .addTo(map)
-                            .bindPopup(`<b>????? Cache Target</b><br>${treasure.riddle}`);
-                    }
-                });
+        // NEW: Double click event engine to dynamically insert data entries
+        map.on('dblclick', function(e) {
+            const clickedLat = e.latlng.lat;
+            const clickedLng = e.latlng.lng;
 
-                // Request continuous real-time high-accuracy device GPS polling
-                if (navigator.geolocation) {
-                    navigator.geolocation.watchPosition((position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
+            const riddleText = prompt("Enter a riddle or clue hint for this physical location:");
+            
+            if (riddleText) {
+                // Post directly to your live API POST endpoint
+                fetch('/api/treasures', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lat: clickedLat,
+                        lng: clickedLng,
+                        riddle: riddleText
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert("Cache successfully hidden in Supabase!");
+                    loadCachesFromDatabase(); // Refresh layout pins
+                })
+                .catch(err => alert("Error saving cache target: " + err));
+            }
+        });
 
-                        // Center map window smoothly to player location
-                        map.setView([lat, lng], 15);
+        // Initialize core location loops
+        loadCachesFromDatabase();
 
-                        // Draw or move player position marker bubble
-                        if (!userLocationMarker) {
-                            userLocationMarker = L.circle([lat, lng], {
-                                color: '#007bff', fillColor: '#007bff', fillOpacity: 0.4, radius: 25
-                            }).addTo(map);
-                        } else {
-                            userLocationMarker.setLatLng([lat, lng]);
-                        }
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition((position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
 
-                        // Fire up the radar analyzer computations
-                        updateRadar(lat, lng);
-                    }, (err) => console.error("GPS Error:", err), {
-                        enableHighAccuracy: true
-                    });
+                map.setView([lat, lng], 15);
+
+                if (!userLocationMarker) {
+                    userLocationMarker = L.circle([lat, lng], {
+                        color: '#007bff', fillColor: '#007bff', fillOpacity: 0.4, radius: 25
+                    }).addTo(map);
+                } else {
+                    userLocationMarker.setLatLng([lat, lng]);
                 }
-            })
-            .catch(err => console.error("Database fetch exception error:", err));
+
+                updateRadar(lat, lng);
+            }, (err) => console.error("GPS Error:", err), {
+                enableHighAccuracy: true
+            });
+        }
     </script>
 </body>
 </html>
