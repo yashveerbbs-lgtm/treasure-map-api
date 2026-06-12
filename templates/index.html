@@ -3,92 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geocatcher - Map</title>
+    <title>Geocatcher - Live Radar</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body, html {
             margin: 0;
             padding: 0;
             height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #111;
         }
         #map {
             width: 100%;
-            height: 100vh;
+            height: 70vh; /* Map takes up top 70% */
         }
-        .loading-title {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 20px;
-            border-radius: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        /* Gaming Radar Dashboard Panel */
+        #radar-panel {
+            width: 100%;
+            height: 30vh; /* Dashboard takes up bottom 30% */
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            box-sizing: border-box;
+            padding: 10px;
+        }
+        .status-badge {
+            font-size: 24px;
             font-weight: bold;
-            color: #333;
+            padding: 10px 25px;
+            border-radius: 30px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(255,255,255,0.1);
+        }
+        /* Proximity Colors */
+        .freezing { background-color: #007bff; text-shadow: 0 0 8px #0056b3; }
+        .warm { background-color: #fd7e14; text-shadow: 0 0 8px #d94111; }
+        .burning { background-color: #dc3545; animation: pulse 1s infinite; text-shadow: 0 0 8px #9c1c24; }
+        
+        .distance-text {
+            font-size: 18px;
+            color: #e0e0e0;
+            margin: 5px 0;
+        }
+        .riddle-hint {
+            font-size: 14px;
+            color: #a0a0a5;
+            font-style: italic;
+            max-width: 80%;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 10px #dc3545; }
+            50% { transform: scale(1.04); box-shadow: 0 0 25px #dc3545; }
+            100% { transform: scale(1); box-shadow: 0 0 10px #dc3545; }
         }
     </style>
 </head>
 <body>
 
-    <div class="loading-title">?? Geocatcher Live Radar</div>
     <div id="map"></div>
+
+    <div id="radar-panel">
+        <div id="radar-status" class="status-badge freezing">?? Initializing Radar...</div>
+        <div id="radar-distance" class="distance-text">Searching for satellite GPS...</div>
+        <div id="radar-hint" class="riddle-hint">Walk around your area to pick up cache anomalies.</div>
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Initialize the Map canvas centered globally
+        // 1. Setup global map canvas
         const map = L.map('map').setView([20.0, 0.0], 2);
+        let userLocationMarker = null;
+        let allTreasures = [];
 
-        // 2. Load free open-source map design tiles
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // 3. Try to locate the player's live device location
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((position) => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-                
-                // Center map automatically to player's neighborhood
-                map.setView([userLat, userLng], 13);
-
-                // Add a unique blue circle representing the actual player
-                L.circle([userLat, userLng], {
-                    color: '#007bff',
-                    fillColor: '#007bff',
-                    fillOpacity: 0.4,
-                    radius: 30
-                }).addTo(map).bindPopup("<b>You are here!</b>").openPopup();
-            });
+        // 2. Haversine Math Formula: Calculates precise distance in meters between two coordinates
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Radius of the Earth in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c; // Distance in meters
         }
 
-        // 4. Connect to your live backend database endpoint
+        // 3. Core Engine: Evaluates player location against closest database items
+        function updateRadar(userLat, userLng) {
+            if (allTreasures.length === 0) return;
+
+            let closestTreasure = null;
+            let shortestDistance = Infinity;
+
+            // Find which cache is closest physically to the player
+            allTreasures.forEach(treasure => {
+                const distance = calculateDistance(userLat, userLng, treasure.lat, treasure.lng);
+                if (distance < shortestDistance) {
+                    shortestDistance = distance;
+                    closestTreasure = treasure;
+                }
+            });
+
+            // Update user text display layout
+            const distanceDiv = document.getElementById('radar-distance');
+            const statusDiv = document.getElementById('radar-status');
+            const hintDiv = document.getElementById('radar-hint');
+
+            distanceDiv.innerText = `Closest Cache: ${Math.round(shortestDistance)} meters away`;
+            hintDiv.innerText = `Current Area Riddle: "${closestTreasure.riddle}"`;
+
+            // Change Radar game states based on meter calculations
+            statusDiv.className = "status-badge"; // clear old states
+            if (shortestDistance <= 20) {
+                statusDiv.innerText = "?? Burning Hot! ??";
+                statusDiv.classList.add("burning");
+            } else if (shortestDistance <= 150) {
+                statusDiv.innerText = "?? Getting Warm ??";
+                statusDiv.classList.add("warm");
+            } else {
+                statusDiv.innerText = "?? Freezing Cold ??";
+                statusDiv.classList.add("freezing");
+            }
+        }
+
+        // 4. Download Cache data array from your live Render API
         fetch('/api/treasures')
             .then(response => response.json())
             .then(treasures => {
+                allTreasures = treasures;
+                
+                // Drop visible Pins onto map for debugging references
                 treasures.forEach(treasure => {
-                    // Pull coordinates and riddle text safely
-                    const lat = treasure.lat;
-                    const lng = treasure.lng;
-                    const riddle = treasure.riddle;
-
-                    if (lat && lng) {
-                        // Drop a visual game pin onto the map layout
-                        L.marker([lat, lng])
+                    if (treasure.lat && treasure.lng) {
+                        L.marker([treasure.lat, treasure.lng])
                             .addTo(map)
-                            .bindPopup(`
-                                <div style="font-size:14px; text-align:center;">
-                                    <b>????? Hidden Cache</b><br><br>
-                                    <i>"${riddle}"</i>
-                                </div>
-                            `);
+                            .bindPopup(`<b>????? Cache Target</b><br>${treasure.riddle}`);
                     }
                 });
+
+                // Request continuous real-time high-accuracy device GPS polling
+                if (navigator.geolocation) {
+                    navigator.geolocation.watchPosition((position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+
+                        // Center map window smoothly to player location
+                        map.setView([lat, lng], 15);
+
+                        // Draw or move player position marker bubble
+                        if (!userLocationMarker) {
+                            userLocationMarker = L.circle([lat, lng], {
+                                color: '#007bff', fillColor: '#007bff', fillOpacity: 0.4, radius: 25
+                            }).addTo(map);
+                        } else {
+                            userLocationMarker.setLatLng([lat, lng]);
+                        }
+
+                        // Fire up the radar analyzer computations
+                        updateRadar(lat, lng);
+                    }, (err) => console.error("GPS Error:", err), {
+                        enableHighAccuracy: true
+                    });
+                }
             })
-            .catch(err => console.error("Error loading geocaches:", err));
+            .catch(err => console.error("Database fetch exception error:", err));
     </script>
 </body>
 </html>
