@@ -35,19 +35,36 @@ def add_treasure():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/claims', methods=['POST'])
+# --- FIX: Changed to singular '/api/claim' and added coordinate lookup ---
+@app.route('/api/claim', methods=['POST'])
 def claim_treasure():
     try:
         data = request.json
         username = data.get('username')
-        treasure_id = data.get('treasure_id')
+        lat = data.get('lat')
+        lng = data.get('lng')
         
-        response = supabase.table('claims').insert({"username": username, "treasure_id": int(treasure_id)}).execute()
+        if not username:
+            return jsonify({"error": "Username is required"}), 400
+
+        # Step 1: Look up the treasure's ID using its GPS coordinates
+        treasure_response = supabase.table('treasures').select('id').eq('lat', lat).eq('lng', lng).execute()
+        
+        if not treasure_response.data:
+            return jsonify({"error": "Treasure not found in database"}), 404
+            
+        treasure_id = treasure_response.data[0]['id']
+        
+        # Step 2: Insert the claim into the database
+        response = supabase.table('claims').insert({"username": username, "treasure_id": treasure_id}).execute()
+        
         return jsonify({"status": "success", "message": f"Cache claimed by {username}!"}), 201
+        
     except Exception as e:
+        print("Error saving claim:", str(e))
         return jsonify({"error": str(e)}), 500
 
-# --- NEW: Leaderboard Route ---
+# --- Leaderboard Route ---
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
     try:
