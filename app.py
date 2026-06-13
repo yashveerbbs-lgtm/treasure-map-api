@@ -1,7 +1,7 @@
 ﻿import os
 from flask import Flask, render_template, request, jsonify
 from supabase import create_client, Client
-from collections import Counter # Added to help count claims
+from collections import Counter
 
 app = Flask(__name__)
 
@@ -14,7 +14,7 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 def home():
     return render_template('index.html')
 
-# --- Existing Routes ---
+# --- Fetch All Treasures ---
 @app.route('/api/treasures', methods=['GET'])
 def get_treasures():
     try:
@@ -23,19 +23,34 @@ def get_treasures():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# --- Hide a New Treasure ---
 @app.route('/api/treasures', methods=['POST'])
 def add_treasure():
     data = request.get_json()
     try:
         lat = float(data.get('lat'))
         lng = float(data.get('lng'))
-        riddle = data.get('riddle')
-        response = supabase.table('treasures').insert({"lat": lat, "lng": lng, "riddle": riddle}).execute()
+        
+        # Grab the new details, using defaults if the user leaves them blank
+        title = data.get('title', 'Mystery Cache')
+        description = data.get('description', 'No description provided.')
+        image_url = data.get('image_url', '')
+        
+        # Save everything to the database
+        response = supabase.table('treasures').insert({
+            "lat": lat, 
+            "lng": lng, 
+            "title": title,
+            "description": description,
+            "image_url": image_url
+        }).execute()
+        
         return jsonify({"message": "Cache successfully hidden!"}), 200
     except Exception as e:
+        print("Error adding treasure:", str(e))
         return jsonify({"error": str(e)}), 500
 
-# --- FIX: Changed to singular '/api/claim' and added coordinate lookup ---
+# --- Claim a Treasure ---
 @app.route('/api/claim', methods=['POST'])
 def claim_treasure():
     try:
@@ -74,7 +89,7 @@ def get_leaderboard():
         # Count occurrences of each username
         counts = Counter([item['username'] for item in response.data])
         
-        # Convert to a list of dicts for the frontend
+        # Convert to a list of dicts for the frontend, sorted automatically by Counter
         leaderboard = [{"username": name, "count": count} for name, count in counts.most_common()]
         return jsonify(leaderboard), 200
     except Exception as e:
