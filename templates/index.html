@@ -66,13 +66,21 @@
         let treasures = []; 
         let closestTreasure = null; 
 
-        // 2. Fetch Treasures (Modified to save the marker)
+        // 2. Fetch Treasures with Local Storage filtering
         fetch('/api/treasures')
             .then(res => res.json())
             .then(data => {
-                treasures = data; 
+                // Check browser memory for caches we already found
+                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
+                
+                // Filter out the ones we already found
+                treasures = data.filter(t => {
+                    const cacheId = t.lat + ',' + t.lng;
+                    return !claimedCaches.includes(cacheId);
+                });
+                
+                // Draw only the unclaimed ones
                 treasures.forEach(t => {
-                    // We save the marker directly into our treasure object so we can delete it later
                     t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(t.riddle);
                 });
             });
@@ -146,7 +154,6 @@
                         claimBtn.style.display = "none";
                     }
                 } else {
-                    // No treasures left!
                     document.getElementById('radar-status').innerText = "AREA CLEARED";
                     document.getElementById('radar-status').className = "status-badge freezing";
                     document.getElementById('radar-distance').innerText = "No caches remaining nearby.";
@@ -155,7 +162,7 @@
             });
         }
 
-        // 5. CLAIM BUTTON LOGIC (Modified to remove pin)
+        // 5. CLAIM BUTTON LOGIC with Local Storage
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure) return;
 
@@ -175,10 +182,16 @@
                 .then(data => {
                     alert("?? Treasure Logged Successfully!");
                     
-                    // NEW: Remove the pin from the map
+                    // Remove the pin from the map
                     map.removeLayer(closestTreasure.marker);
                     
-                    // NEW: Remove the treasure from our radar list
+                    // NEW: Save it to the browser's memory so it stays hidden on refresh
+                    const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
+                    const cacheId = closestTreasure.lat + ',' + closestTreasure.lng;
+                    claimedCaches.push(cacheId);
+                    localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
+                    
+                    // Remove the treasure from our radar list
                     treasures = treasures.filter(t => t !== closestTreasure);
                     closestTreasure = null;
                     
