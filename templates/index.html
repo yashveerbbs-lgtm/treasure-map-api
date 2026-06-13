@@ -64,15 +64,16 @@
         let userMarker = null;
         let isFirstLock = true;
         let treasures = []; 
-        let closestTreasure = null; // Remembers which treasure you are closest to
+        let closestTreasure = null; 
 
-        // 2. Fetch Treasures
+        // 2. Fetch Treasures (Modified to save the marker)
         fetch('/api/treasures')
             .then(res => res.json())
             .then(data => {
                 treasures = data; 
-                data.forEach(t => {
-                    L.marker([t.lat, t.lng]).addTo(map).bindPopup(t.riddle);
+                treasures.forEach(t => {
+                    // We save the marker directly into our treasure object so we can delete it later
+                    t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(t.riddle);
                 });
             });
 
@@ -114,15 +115,17 @@
 
                 if (treasures.length > 0) {
                     let shortestDistance = Infinity;
+                    let currentClosest = null;
 
                     treasures.forEach(t => {
                         let dist = map.distance([latitude, longitude], [t.lat, t.lng]);
                         if (dist < shortestDistance) {
                             shortestDistance = dist;
-                            closestTreasure = t; // Save the closest treasure object
+                            currentClosest = t; 
                         }
                     });
 
+                    closestTreasure = currentClosest;
                     const distanceMeters = Math.round(shortestDistance);
                     document.getElementById('radar-distance').innerText = `Nearest cache is ${distanceMeters} meters away`;
 
@@ -142,18 +145,23 @@
                         statusBadge.className = "status-badge freezing";
                         claimBtn.style.display = "none";
                     }
+                } else {
+                    // No treasures left!
+                    document.getElementById('radar-status').innerText = "AREA CLEARED";
+                    document.getElementById('radar-status').className = "status-badge freezing";
+                    document.getElementById('radar-distance').innerText = "No caches remaining nearby.";
+                    document.getElementById('claim-button').style.display = "none";
                 }
             });
         }
 
-        // 5. CLAIM BUTTON LOGIC
+        // 5. CLAIM BUTTON LOGIC (Modified to remove pin)
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure) return;
 
             const username = prompt("?? You found it! Enter your Explorer Name:");
             
             if (username) {
-                // Send the data to your backend
                 fetch('/api/claim', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -166,8 +174,16 @@
                 .then(res => res.json())
                 .then(data => {
                     alert("?? Treasure Logged Successfully!");
-                    document.getElementById('claim-button').style.display = "none"; // Hide button so they can't spam it
-                    updateLeaderboard(); // Refresh the leaderboard
+                    
+                    // NEW: Remove the pin from the map
+                    map.removeLayer(closestTreasure.marker);
+                    
+                    // NEW: Remove the treasure from our radar list
+                    treasures = treasures.filter(t => t !== closestTreasure);
+                    closestTreasure = null;
+                    
+                    document.getElementById('claim-button').style.display = "none"; 
+                    updateLeaderboard(); 
                 })
                 .catch(err => {
                     alert("Error saving claim to the database. Check console.");
