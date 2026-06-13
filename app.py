@@ -1,4 +1,5 @@
 ﻿import os
+import uuid # Needed to generate unique names for the images
 from flask import Flask, render_template, request, jsonify
 from supabase import create_client, Client
 from collections import Counter
@@ -23,18 +24,39 @@ def get_treasures():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- Hide a New Treasure (UPDATED with 'creator') ---
+# --- Hide a New Treasure (UPDATED for Image Uploads) ---
 @app.route('/api/treasures', methods=['POST'])
 def add_treasure():
-    data = request.get_json()
     try:
-        lat = float(data.get('lat'))
-        lng = float(data.get('lng'))
-        title = data.get('title', 'Mystery Cache')
-        description = data.get('description', 'No description provided.')
-        image_url = data.get('image_url', '')
-        creator = data.get('creator', 'Unknown') # Now we track who hid it!
+        # When sending files, we have to read the data using request.form
+        lat = float(request.form.get('lat'))
+        lng = float(request.form.get('lng'))
+        title = request.form.get('title', 'Mystery Cache')
+        description = request.form.get('description', 'No description provided.')
+        creator = request.form.get('creator', 'Unknown')
         
+        image_url = ""
+        
+        # Check if an image file was included in the upload
+        if 'image' in request.files:
+            file = request.files['image']
+            if file.filename != '':
+                # 1. Generate a random name so we don't accidentally overwrite someone else's photo
+                file_ext = file.filename.split('.')[-1]
+                file_name = f"{uuid.uuid4().hex}.{file_ext}"
+                
+                # 2. Upload the file directly to your Supabase Storage Bucket
+                file_bytes = file.read()
+                supabase.storage.from_('cache-images').upload(
+                    file_name, 
+                    file_bytes, 
+                    {"content-type": file.content_type}
+                )
+                
+                # 3. Get the public link to the image so the map can display it
+                image_url = supabase.storage.from_('cache-images').get_public_url(file_name)
+
+        # Save all the text AND our new image link to the database table
         response = supabase.table('treasures').insert({
             "lat": lat, 
             "lng": lng, 
@@ -46,6 +68,7 @@ def add_treasure():
         
         return jsonify({"message": "Cache successfully hidden!"}), 200
     except Exception as e:
+        print("Error adding treasure:", str(e))
         return jsonify({"error": str(e)}), 500
 
 # --- Claim a Treasure ---
@@ -84,23 +107,20 @@ def get_leaderboard():
         return jsonify({"error": str(e)}), 500
 
 # ==========================================
-# NEW FEATURES: PROFILES & FRIENDS
+# PROFILE & FRIENDS ROUTES
 # ==========================================
 
 # --- Get Profile Stats ---
 @app.route('/api/profile/<username>', methods=['GET'])
 def get_profile(username):
     try:
-        # Get claims count
         claims_response = supabase.table('claims').select('id').eq('username', username).execute()
         found_count = len(claims_response.data)
         
-        # Get hidden count
         hidden_response = supabase.table('treasures').select('id').eq('creator', username).execute()
         hidden_count = len(hidden_response.data)
         
-        # Calculate Rank
-        total_points = found_count + (hidden_count * 2) # Hiding gives double points!
+        total_points = found_count + (hidden_count * 2)
         if total_points < 3: rank = "Novice Hider 🌱"
         elif total_points < 10: rank = "Radar Tech 📡"
         elif total_points < 25: rank = "Pro Explorer 🗺️"
@@ -123,7 +143,6 @@ def send_friend_request():
         requester = data.get('requester')
         receiver = data.get('receiver')
         
-        # Prevent sending to yourself
         if requester == receiver:
             return jsonify({"error": "You can't friend yourself!"}), 400
 
@@ -144,7 +163,7 @@ def respond_friend_request():
         data = request.json
         requester = data.get('requester')
         receiver = data.get('receiver')
-        action = data.get('action') # 'accept' or 'reject'
+        action = data.get('action')
         
         if action == 'accept':
             supabase.table('friends').update({"status": "accepted"}).eq('requester', requester).eq('receiver', receiver).execute()
@@ -159,9 +178,7 @@ def respond_friend_request():
 @app.route('/api/friends/<username>', methods=['GET'])
 def get_friends(username):
     try:
-        # Get requests where you are the receiver
         received = supabase.table('friends').select('*').eq('receiver', username).execute()
-        # Get requests where you are the requester
         sent = supabase.table('friends').select('*').eq('requester', username).execute()
         
         all_friends = received.data + sent.data
@@ -171,11 +188,9 @@ def get_friends(username):
         
         for f in all_friends:
             if f['status'] == 'accepted':
-                # If they accepted, grab the other person's name
                 friend_name = f['requester'] if f['receiver'] == username else f['receiver']
                 accepted_friends.append(friend_name)
             elif f['status'] == 'pending' and f['receiver'] == username:
-                # Someone wants to be your friend
                 pending_requests.append(f['requester'])
 
         return jsonify({
