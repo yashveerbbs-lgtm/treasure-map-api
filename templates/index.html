@@ -63,13 +63,14 @@
 
         let userMarker = null;
         let isFirstLock = true;
-        let treasures = []; // New variable to store the treasures
+        let treasures = []; 
+        let closestTreasure = null; // Remembers which treasure you are closest to
 
         // 2. Fetch Treasures
         fetch('/api/treasures')
             .then(res => res.json())
             .then(data => {
-                treasures = data; // Save the data to our list
+                treasures = data; 
                 data.forEach(t => {
                     L.marker([t.lat, t.lng]).addTo(map).bindPopup(t.riddle);
                 });
@@ -92,7 +93,7 @@
         }
         updateLeaderboard();
 
-        // 4. GPS Tracking & Radar Distance Logic
+        // 4. GPS Tracking & Radar Logic
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
                 const { latitude, longitude } = position.coords;
@@ -111,7 +112,6 @@
                     isFirstLock = false;
                 }
 
-                // RADAR LOGIC: Find the closest treasure
                 if (treasures.length > 0) {
                     let shortestDistance = Infinity;
 
@@ -119,10 +119,10 @@
                         let dist = map.distance([latitude, longitude], [t.lat, t.lng]);
                         if (dist < shortestDistance) {
                             shortestDistance = dist;
+                            closestTreasure = t; // Save the closest treasure object
                         }
                     });
 
-                    // Update the UI
                     const distanceMeters = Math.round(shortestDistance);
                     document.getElementById('radar-distance').innerText = `Nearest cache is ${distanceMeters} meters away`;
 
@@ -132,7 +132,7 @@
                     if (distanceMeters <= 20) {
                         statusBadge.innerText = "BURNING HOT!";
                         statusBadge.className = "status-badge burning";
-                        claimBtn.style.display = "block"; // Show the claim button!
+                        claimBtn.style.display = "block";
                     } else if (distanceMeters <= 100) {
                         statusBadge.innerText = "WARMING UP";
                         statusBadge.className = "status-badge warm";
@@ -145,6 +145,36 @@
                 }
             });
         }
+
+        // 5. CLAIM BUTTON LOGIC
+        document.getElementById('claim-button').addEventListener('click', () => {
+            if (!closestTreasure) return;
+
+            const username = prompt("?? You found it! Enter your Explorer Name:");
+            
+            if (username) {
+                // Send the data to your backend
+                fetch('/api/claim', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        username: username, 
+                        lat: closestTreasure.lat,
+                        lng: closestTreasure.lng
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert("?? Treasure Logged Successfully!");
+                    document.getElementById('claim-button').style.display = "none"; // Hide button so they can't spam it
+                    updateLeaderboard(); // Refresh the leaderboard
+                })
+                .catch(err => {
+                    alert("Error saving claim to the database. Check console.");
+                    console.error(err);
+                });
+            }
+        });
     </script>
 </body>
 </html>
