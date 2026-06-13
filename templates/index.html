@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -111,11 +111,11 @@
     </div>
 
     <div id="map"></div>
-    <button id="profile-open-btn" onclick="openProfile()">?? Profile</button>
+    <button id="profile-open-btn" onclick="openProfile()">👤 Profile</button>
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
 
     <div id="top-panel" class="glass">
-        <h3 class="header-title">?? Top Explorers</h3>
+        <h3 class="header-title">🏆 Top Explorers</h3>
         <ul id="leaderboard-list"><li>Loading...</li></ul>
     </div>
 
@@ -226,7 +226,14 @@
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
             }).then(res => res.json()).then(data => {
-                alert("?? Treasure Logged Successfully!");
+                
+                // NEW: Check for hidden server errors first!
+                if (data.error) {
+                    alert("Uh oh! Database Error: " + data.error);
+                    return; 
+                }
+
+                alert("🎉 Treasure Logged Successfully!");
                 map.removeLayer(closestTreasure.marker);
                 
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
@@ -287,17 +294,17 @@
                 
                 // Render Friends
                 if(data.friends && data.friends.length > 0) {
-                    fList.innerHTML = data.friends.map(f => `<div class="friend-li"><span>?? ${f}</span></div>`).join('');
+                    fList.innerHTML = data.friends.map(f => `<div class="friend-li"><span>🤝 ${f}</span></div>`).join('');
                 } else { fList.innerHTML = "No friends added yet."; }
 
                 // Render Pending Requests
                 if(data.pending && data.pending.length > 0) {
                     pList.innerHTML = data.pending.map(p => `
                         <div class="friend-li">
-                            <span>?? ${p}</span>
+                            <span>📨 ${p}</span>
                             <div>
-                                <button class="small-btn accept-btn" onclick="respondFriend('${p}', 'accept')">?</button>
-                                <button class="small-btn reject-btn" onclick="respondFriend('${p}', 'reject')">?</button>
+                                <button class="small-btn accept-btn" onclick="respondFriend('${p}', 'accept')">✓</button>
+                                <button class="small-btn reject-btn" onclick="respondFriend('${p}', 'reject')">✗</button>
                             </div>
                         </div>
                     `).join('');
