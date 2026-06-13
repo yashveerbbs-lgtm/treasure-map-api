@@ -18,10 +18,10 @@
         #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
         .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; }
-        .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; }
+        .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; }
 
         /* App Panels */
-        #top-panel { position: absolute; top: 15px; left: 15px; right: 15px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; }
+        #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; }
         .header-title { margin: 0 0 10px 0; font-size: 14px; color: #64ffda; text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
 
@@ -33,14 +33,22 @@
         
         #claim-button { display: none; margin-top: 15px; }
 
-        /* Add Treasure Floating Button */
+        /* Floating Buttons */
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #64ffda; color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        /* Modal for adding cache */
-        #add-modal { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; }
-        .modal-content { padding: 30px; border-radius: 20px; width: 80%; max-width: 350px; text-align: left;}
+        #profile-open-btn { position: absolute; top: 15px; right: 15px; padding: 10px 15px; border-radius: 20px; background: #1a1a2e; color: #64ffda; border: 1px solid #64ffda; font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+
+        /* Modals */
+        .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
+        .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 80vh; overflow-y: auto;}
         .modal-content input, .modal-content textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: none; box-sizing: border-box; font-family: inherit;}
         .close-btn { background: #ff416c; margin-top: 10px; color: white; }
+        
+        /* Profile Specifics */
+        .profile-stat { display: flex; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
+        .friend-li { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
+        .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .accept-btn { background: #00e676; color: #000; }
+        .reject-btn { background: #ff416c; color: #fff; }
 
         /* Custom Leaflet Popup Styling */
         .leaflet-popup-content-wrapper { background: rgba(26, 26, 46, 0.95); color: #fff; border-radius: 12px; border: 1px solid #64ffda;}
@@ -59,29 +67,52 @@
     <div id="login-screen" class="glass">
         <div class="login-box glass">
             <h2>Welcome to Geocatcher</h2>
-            <p>Enter your Explorer Name to begin.</p>
-            <input type="text" id="username-input" placeholder="e.g. IndianaJones99">
+            <input type="text" id="username-input" placeholder="Enter Explorer Name">
             <button class="action-btn" onclick="login()">Start Exploring</button>
         </div>
     </div>
 
-    <div id="add-modal" class="glass">
+    <div id="add-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h3 style="margin-top:0; color:#64ffda;">Hide a Cache Here</h3>
-            <label>Title</label>
-            <input type="text" id="cache-title" placeholder="Secret Gold Coin">
-            <label>Description</label>
-            <textarea id="cache-desc" rows="3" placeholder="Hidden under the old oak tree..."></textarea>
-            <label>Image Link (URL)</label>
-            <input type="text" id="cache-img" placeholder="https://example.com/image.jpg">
+            <input type="text" id="cache-title" placeholder="Cache Title (e.g. Balle Balle)">
+            <textarea id="cache-desc" rows="3" placeholder="Clues or description..."></textarea>
+            <input type="text" id="cache-img" placeholder="Image Link (URL ending in .jpg)">
             
             <button class="action-btn" onclick="submitCache()">Hide it!</button>
-            <button class="action-btn close-btn" onclick="closeModal()">Cancel</button>
+            <button class="action-btn close-btn" onclick="closeModal('add-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal-content glass">
+            <h2 id="profile-name" style="margin-top:0; color:#64ffda; text-align: center;">My Profile</h2>
+            
+            <div class="profile-stat"><span>Rank:</span> <strong id="profile-rank">Loading...</strong></div>
+            <div class="profile-stat"><span>Caches Found:</span> <strong id="profile-found">0</strong></div>
+            <div class="profile-stat"><span>Caches Hidden:</span> <strong id="profile-hidden">0</strong></div>
+            
+            <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+            
+            <h3 style="margin-bottom: 5px;">Send Friend Request</h3>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="friend-request-name" placeholder="Friend's Username" style="margin-bottom: 0;">
+                <button class="action-btn" style="width: auto; margin-top: 0;" onclick="sendFriendRequest()">Add</button>
+            </div>
+
+            <h3 style="margin-bottom: 5px; margin-top: 20px;">Pending Requests</h3>
+            <div id="pending-list" style="font-size: 14px; color: #ccc;">No pending requests.</div>
+
+            <h3 style="margin-bottom: 5px; margin-top: 20px;">My Friends</h3>
+            <div id="friends-list" style="font-size: 14px; color: #ccc;">No friends added yet.</div>
+
+            <button class="action-btn close-btn" style="margin-top: 25px;" onclick="closeModal('profile-modal')">Close Profile</button>
         </div>
     </div>
 
     <div id="map"></div>
-    <button id="add-btn" onclick="openModal()">+</button>
+    <button id="profile-open-btn" onclick="openProfile()">?? Profile</button>
+    <button id="add-btn" onclick="openModal('add-modal')">+</button>
 
     <div id="top-panel" class="glass">
         <h3 class="header-title">?? Top Explorers</h3>
@@ -97,8 +128,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         let myUsername = localStorage.getItem('geocatcher_username');
-        let currentLat = 0;
-        let currentLng = 0;
+        let currentLat = 0; let currentLng = 0;
 
         // Login Logic
         if (myUsername) {
@@ -111,9 +141,7 @@
                 localStorage.setItem('geocatcher_username', name);
                 myUsername = name;
                 document.getElementById('login-screen').style.display = 'none';
-            } else {
-                alert("Please enter a name!");
-            }
+            } else { alert("Please enter a name!"); }
         }
 
         // Map Setup
@@ -121,78 +149,56 @@
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
-        let userMarker = null;
-        let isFirstLock = true;
-        let treasures = []; 
-        let closestTreasure = null; 
+        let userMarker = null; let isFirstLock = true;
+        let treasures = []; let closestTreasure = null; 
 
-        // Fetch Treasures with Beautiful Popups
+        // Fetch Data Functions
         function loadTreasures() {
-            fetch('/api/treasures')
-                .then(res => res.json())
-                .then(data => {
-                    const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
-                    
-                    // Clear existing markers to prevent duplicates on reload
-                    treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
-
-                    treasures = data.filter(t => !claimedCaches.includes(t.lat + ',' + t.lng));
-                    
-                    treasures.forEach(t => {
-                        // Create the beautiful HTML for the popup
-                        let popupHTML = `<p class="popup-title">${t.title || 'Mystery Cache'}</p>`;
-                        if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
-                        if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
-
-                        t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(popupHTML);
-                    });
+            fetch('/api/treasures').then(res => res.json()).then(data => {
+                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
+                treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
+                treasures = data.filter(t => !claimedCaches.includes(t.lat + ',' + t.lng));
+                
+                treasures.forEach(t => {
+                    let popupHTML = `<p class="popup-title">${t.title || 'Mystery Cache'}</p>`;
+                    if (t.creator) popupHTML += `<span style="font-size:11px; color:#aaa;">Hidden by: ${t.creator}</span>`;
+                    if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
+                    if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
+                    t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(popupHTML);
                 });
+            });
         }
-        loadTreasures();
-
+        
         function updateLeaderboard() {
-            fetch('/api/leaderboard')
-                .then(res => res.json())
-                .then(data => {
-                    const list = document.getElementById('leaderboard-list');
-                    list.innerHTML = '';
-                    data.forEach(entry => {
-                        const li = document.createElement('li');
-                        li.innerHTML = `<strong>${entry.username}</strong>: ${entry.count} found`;
-                        list.appendChild(li);
-                    });
+            fetch('/api/leaderboard').then(res => res.json()).then(data => {
+                const list = document.getElementById('leaderboard-list');
+                list.innerHTML = '';
+                data.forEach(entry => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${entry.username}</strong>: ${entry.count}`;
+                    list.appendChild(li);
                 });
+            });
         }
-        updateLeaderboard();
+        
+        loadTreasures(); updateLeaderboard();
 
         // GPS Tracking
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
-                currentLat = position.coords.latitude;
-                currentLng = position.coords.longitude;
+                currentLat = position.coords.latitude; currentLng = position.coords.longitude;
 
                 if (!userMarker) {
                     userMarker = L.circleMarker([currentLat, currentLng], { color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 10, weight: 3 }).addTo(map);
-                } else {
-                    userMarker.setLatLng([currentLat, currentLng]);
-                }
+                } else { userMarker.setLatLng([currentLat, currentLng]); }
                 userMarker.bringToFront();
-                
-                if (isFirstLock) {
-                    map.setView([currentLat, currentLng], 17);
-                    isFirstLock = false;
-                }
+                if (isFirstLock) { map.setView([currentLat, currentLng], 17); isFirstLock = false; }
 
                 if (treasures.length > 0) {
-                    let shortestDistance = Infinity;
-                    let currentClosest = null;
-
+                    let shortestDistance = Infinity; let currentClosest = null;
                     treasures.forEach(t => {
                         let dist = map.distance([currentLat, currentLng], [t.lat, t.lng]);
-                        if (dist < shortestDistance) {
-                            shortestDistance = dist;
-                            currentClosest = t; 
-                        }
+                        if (dist < shortestDistance) { shortestDistance = dist; currentClosest = t; }
                     });
 
                     closestTreasure = currentClosest;
@@ -203,33 +209,23 @@
                     const claimBtn = document.getElementById('claim-button');
 
                     if (distanceMeters <= 20) {
-                        statusBadge.innerText = "BURNING HOT!";
-                        statusBadge.className = "status-badge burning";
-                        claimBtn.style.display = "block";
+                        statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; claimBtn.style.display = "block";
                     } else if (distanceMeters <= 100) {
-                        statusBadge.innerText = "WARMING UP";
-                        statusBadge.className = "status-badge warm";
-                        claimBtn.style.display = "none";
+                        statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
                     } else {
-                        statusBadge.innerText = "FREEZING COLD";
-                        statusBadge.className = "status-badge freezing";
-                        claimBtn.style.display = "none";
+                        statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
                     }
                 }
             });
         }
 
-        // Claim Logic
+        // Action Buttons Logic
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure || !myUsername) return;
-
             fetch('/api/claim', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
-            })
-            .then(res => res.json())
-            .then(data => {
+            }).then(res => res.json()).then(data => {
                 alert("?? Treasure Logged Successfully!");
                 map.removeLayer(closestTreasure.marker);
                 
@@ -237,40 +233,100 @@
                 claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
                 localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
                 
-                treasures = treasures.filter(t => t !== closestTreasure);
-                closestTreasure = null;
-                
+                treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
                 document.getElementById('claim-button').style.display = "none"; 
                 updateLeaderboard(); 
             });
         });
 
-        // Hide Cache Modal Logic
-        function openModal() { document.getElementById('add-modal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
-
         function submitCache() {
             const title = document.getElementById('cache-title').value;
             const desc = document.getElementById('cache-desc').value;
             const img = document.getElementById('cache-img').value;
-
             if (!title) { alert("Please give it a title!"); return; }
 
             fetch('/api/treasures', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ lat: currentLat, lng: currentLng, title: title, description: desc, image_url: img })
-            })
-            .then(res => res.json())
-            .then(data => {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat: currentLat, lng: currentLng, title: title, description: desc, image_url: img, creator: myUsername })
+            }).then(res => res.json()).then(data => {
                 alert("Location Hidden Successfully!");
-                closeModal();
-                // Clear the form
-                document.getElementById('cache-title').value = '';
-                document.getElementById('cache-desc').value = '';
-                document.getElementById('cache-img').value = '';
-                // Reload map pins
+                closeModal('add-modal');
+                document.getElementById('cache-title').value = ''; document.getElementById('cache-desc').value = ''; document.getElementById('cache-img').value = '';
                 loadTreasures(); 
+            });
+        }
+
+        // Modal Helpers
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ==========================================
+        // PROFILE & FRIENDS LOGIC
+        // ==========================================
+        
+        function openProfile() {
+            if(!myUsername) return;
+            document.getElementById('profile-name').innerText = myUsername + "'s Profile";
+            openModal('profile-modal');
+            
+            // 1. Fetch Stats
+            fetch('/api/profile/' + myUsername).then(r => r.json()).then(data => {
+                document.getElementById('profile-rank').innerText = data.rank || 'Unknown';
+                document.getElementById('profile-found').innerText = data.found || 0;
+                document.getElementById('profile-hidden').innerText = data.hidden || 0;
+            });
+
+            // 2. Fetch Friends
+            loadFriends();
+        }
+
+        function loadFriends() {
+            fetch('/api/friends/' + myUsername).then(r => r.json()).then(data => {
+                const fList = document.getElementById('friends-list');
+                const pList = document.getElementById('pending-list');
+                
+                // Render Friends
+                if(data.friends && data.friends.length > 0) {
+                    fList.innerHTML = data.friends.map(f => `<div class="friend-li"><span>?? ${f}</span></div>`).join('');
+                } else { fList.innerHTML = "No friends added yet."; }
+
+                // Render Pending Requests
+                if(data.pending && data.pending.length > 0) {
+                    pList.innerHTML = data.pending.map(p => `
+                        <div class="friend-li">
+                            <span>?? ${p}</span>
+                            <div>
+                                <button class="small-btn accept-btn" onclick="respondFriend('${p}', 'accept')">?</button>
+                                <button class="small-btn reject-btn" onclick="respondFriend('${p}', 'reject')">?</button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else { pList.innerHTML = "No pending requests."; }
+            });
+        }
+
+        function sendFriendRequest() {
+            const friendName = document.getElementById('friend-request-name').value.trim();
+            if(!friendName) return;
+
+            fetch('/api/friend/request', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requester: myUsername, receiver: friendName })
+            }).then(r => r.json()).then(data => {
+                if(data.error) alert(data.error);
+                else {
+                    alert("Request sent to " + friendName + "!");
+                    document.getElementById('friend-request-name').value = '';
+                }
+            });
+        }
+
+        function respondFriend(requesterName, action) {
+            fetch('/api/friend/respond', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requester: requesterName, receiver: myUsername, action: action })
+            }).then(r => r.json()).then(data => {
+                loadFriends(); // Reload the lists instantly
             });
         }
     </script>
