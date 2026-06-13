@@ -56,7 +56,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // 1. Initialize Map
-        const map = L.map('map').setView([28.02, 73.31], 15); // Starting at Bikaner
+        const map = L.map('map').setView([28.02, 73.31], 15); // Starts at Bikaner
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         let userMarker = null;
@@ -87,7 +87,7 @@
         }
         updateLeaderboard();
 
-        // 4. GPS Tracking with User Marker
+        // 4. GPS Tracking with User Marker and Auto-Centering
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
                 const { latitude, longitude } = position.coords;
@@ -96,11 +96,16 @@
                 document.getElementById('radar-status').className = "status-badge warm";
                 document.getElementById('radar-distance').innerText = "Looking for nearby treasure...";
 
+                // Create or move the blue dot
                 if (!userMarker) {
                     userMarker = L.circleMarker([latitude, longitude], { color: 'blue', radius: 8 }).addTo(map);
                 } else {
                     userMarker.setLatLng([latitude, longitude]);
                 }
+                
+                // Automatically center the map on your location
+                map.setView([latitude, longitude], 16);
+
             });
         }
     </script>
