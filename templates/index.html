@@ -2,90 +2,129 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geocatcher - Live Radar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1a2e">
+    
+    <title>Geocatcher App</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Arial, sans-serif; background: #111; }
-        #map { width: 100%; height: 65vh; }
+        /* Base App Styling */
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: #000; overflow: hidden; /* Prevents scrolling */
+        }
         
-        #radar-panel { 
-            width: 100%; height: 35vh; 
-            background: rgba(26, 26, 46, 0.85); 
-            backdrop-filter: blur(10px);
-            border-top: 2px solid rgba(100, 255, 218, 0.3);
-            color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            padding: 15px; box-sizing: border-box; text-align: center;
+        /* Full Screen Map */
+        #map { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; 
+        }
+        
+        /* Glassmorphic Floating Panels */
+        .glass-panel {
+            background: rgba(26, 26, 46, 0.75); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px); /* For iPhones */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: #fff;
+            z-index: 1000;
         }
 
-        #leaderboard {
-            position: absolute; top: 20px; right: 20px; width: 220px;
-            background: rgba(26, 26, 46, 0.85); backdrop-filter: blur(10px);
-            border: 1px solid rgba(100, 255, 218, 0.5);
-            padding: 15px; border-radius: 12px; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        /* Top Panel: Leaderboard */
+        #top-panel {
+            position: absolute; top: 15px; left: 15px; right: 15px; 
+            border-radius: 20px; padding: 15px;
+            max-height: 120px; overflow-y: auto;
         }
 
-        .status-badge { font-size: 20px; font-weight: bold; padding: 8px 25px; border-radius: 30px; margin-bottom: 6px; text-transform: uppercase; }
-        .freezing { background-color: #007bff; }
-        .warm { background-color: #fd7e14; }
-        .burning { background-color: #dc3545; animation: pulse 1s infinite; }
+        .header-title { margin: 0 0 10px 0; font-size: 14px; color: #64ffda; text-transform: uppercase; letter-spacing: 1px; }
+        #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
+
+        /* Bottom Panel: Radar */
+        #bottom-panel {
+            position: absolute; bottom: 25px; left: 15px; right: 15px; 
+            border-radius: 25px; padding: 25px 20px; 
+            text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* Radar Status Badges */
+        .status-badge { 
+            font-size: 22px; font-weight: 800; padding: 10px 30px; 
+            border-radius: 30px; margin-bottom: 8px; text-transform: uppercase; 
+            letter-spacing: 1px; width: 80%;
+        }
+        .freezing { background: linear-gradient(135deg, #007bff, #00d2ff); color: white; }
+        .warm { background: linear-gradient(135deg, #f2994a, #f2c94c); color: #000; }
+        .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
         
+        #radar-distance { font-size: 15px; color: #b2bec3; font-weight: 500; }
+
+        /* Big Action Button */
         .claim-btn { 
-            display: none; background: linear-gradient(135deg, #00e676, #00bfa5);
-            color: #000; border: none; padding: 12px 35px; font-size: 16px; font-weight: bold; 
-            border-radius: 25px; cursor: pointer; margin-top: 15px;
+            display: none; background: linear-gradient(135deg, #00e676, #1de9b6);
+            color: #000; border: none; padding: 15px 40px; font-size: 18px; font-weight: 800; 
+            border-radius: 30px; cursor: pointer; margin-top: 15px; width: 90%;
+            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); text-transform: uppercase;
         }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+
+        /* Hide Leaflet Watermarks for cleaner app look */
+        .leaflet-control-attribution { display: none !important; }
+        .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
     </style>
 </head>
 <body>
 
     <div id="map"></div>
 
-    <div id="leaderboard">
-        <h3 style="margin-top:0; color:#64ffda; font-size: 16px;">Top Explorers</h3>
-        <ul id="leaderboard-list" style="list-style: none; padding: 0; font-size: 14px; color: #fff;">
+    <div id="top-panel" class="glass-panel">
+        <h3 class="header-title">?? Top Explorers</h3>
+        <ul id="leaderboard-list">
             <li>Loading...</li>
         </ul>
     </div>
 
-    <div id="radar-panel">
+    <div id="bottom-panel" class="glass-panel">
         <div id="radar-status" class="status-badge freezing">RADAR READY</div>
-        <div id="radar-distance" style="color: #e0e0e0;">Syncing with satellites...</div>
-        <button id="claim-button" class="claim-btn">LOG VISIT & CLAIM</button>
+        <div id="radar-distance">Syncing with satellites...</div>
+        <button id="claim-button" class="claim-btn">LOG VISIT</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Initialize Map
-        const map = L.map('map').setView([28.02, 73.31], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // Initialize Map
+        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map); // Sleek Dark Mode Map!
+
+        // Add Zoom Control lower down so it doesn't hit the top panel
+        L.control.zoom({ position: 'topleft' }).addTo(map);
 
         let userMarker = null;
         let isFirstLock = true;
         let treasures = []; 
         let closestTreasure = null; 
 
-        // 2. Fetch Treasures with Local Storage filtering
+        // Fetch Treasures
         fetch('/api/treasures')
             .then(res => res.json())
             .then(data => {
-                // Check browser memory for caches we already found
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
-                
-                // Filter out the ones we already found
                 treasures = data.filter(t => {
                     const cacheId = t.lat + ',' + t.lng;
                     return !claimedCaches.includes(cacheId);
                 });
                 
-                // Draw only the unclaimed ones
                 treasures.forEach(t => {
                     t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(t.riddle);
                 });
             });
 
-        // 3. Update Leaderboard
+        // Update Leaderboard
         function updateLeaderboard() {
             fetch('/api/leaderboard')
                 .then(res => res.json())
@@ -94,7 +133,7 @@
                     list.innerHTML = '';
                     data.forEach(entry => {
                         const li = document.createElement('li');
-                        li.innerText = `${entry.username}: ${entry.count} found`;
+                        li.innerHTML = `<strong>${entry.username}</strong>: ${entry.count} found`;
                         list.appendChild(li);
                     });
                 })
@@ -102,14 +141,14 @@
         }
         updateLeaderboard();
 
-        // 4. GPS Tracking & Radar Logic
+        // GPS Tracking
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
                 const { latitude, longitude } = position.coords;
 
                 if (!userMarker) {
                     userMarker = L.circleMarker([latitude, longitude], { 
-                        color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 12 
+                        color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 10, weight: 3
                     }).addTo(map);
                 } else {
                     userMarker.setLatLng([latitude, longitude]);
@@ -162,7 +201,7 @@
             });
         }
 
-        // 5. CLAIM BUTTON LOGIC with Local Storage
+        // Claim Logic
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure) return;
 
@@ -172,26 +211,17 @@
                 fetch('/api/claim', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        username: username, 
-                        lat: closestTreasure.lat,
-                        lng: closestTreasure.lng
-                    })
+                    body: JSON.stringify({ username: username, lat: closestTreasure.lat, lng: closestTreasure.lng })
                 })
                 .then(res => res.json())
                 .then(data => {
                     alert("?? Treasure Logged Successfully!");
-                    
-                    // Remove the pin from the map
                     map.removeLayer(closestTreasure.marker);
                     
-                    // NEW: Save it to the browser's memory so it stays hidden on refresh
                     const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
-                    const cacheId = closestTreasure.lat + ',' + closestTreasure.lng;
-                    claimedCaches.push(cacheId);
+                    claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
                     localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
                     
-                    // Remove the treasure from our radar list
                     treasures = treasures.filter(t => t !== closestTreasure);
                     closestTreasure = null;
                     
@@ -199,7 +229,7 @@
                     updateLeaderboard(); 
                 })
                 .catch(err => {
-                    alert("Error saving claim to the database. Check console.");
+                    alert("Error saving claim to the database.");
                     console.error(err);
                 });
             }
