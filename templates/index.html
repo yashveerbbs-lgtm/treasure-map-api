@@ -142,18 +142,29 @@
             }
         });
 
-        map.on('dblclick', function(e) {
-            const riddleText = prompt("Enter a riddle or clue hint for this physical location:");
-            if (riddleText) {
-                fetch('/api/treasures', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng, riddle: riddleText })
-                })
-                .then(() => { alert("Cache successfully hidden!"); loadCachesFromDatabase(); });
-            }
-        });
+      map.on('dblclick', function(e) {
+    const riddleText = prompt("Enter a riddle or clue hint for this physical location:");
+    if (!riddleText) return; 
 
+    fetch('/api/treasures', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng, riddle: riddleText })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Server rejected the save request");
+        }
+        return response.json();
+    })
+    .then(data => {
+        alert("Cache successfully hidden!");
+        loadCachesFromDatabase(); 
+    })
+    .catch(err => {
+        alert("Error saving pin: " + err.message);
+    });
+});
         loadCachesFromDatabase();
 
         if (navigator.geolocation) {
