@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geocatcher - Live Radar</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #111;
+        }
+        #map {
+            width: 100%;
+            height: 65vh;
+        }
+        #radar-panel {
+            width: 100%;
+            height: 35vh;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            box-sizing: border-box;
+            padding: 15px;
+        }
+        .status-badge {
+            font-size: 24px;
+            font-weight: bold;
+            padding: 8px 25px;
+            border-radius: 30px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .freezing { background-color: #007bff; text-shadow: 0 0 8px #0056b3; }
+        .warm { background-color: #fd7e14; text-shadow: 0 0 8px #d94111; }
+        .burning { background-color: #dc3545; animation: pulse 1s infinite; text-shadow: 0 0 8px #9c1c24; }
+        
+        .distance-text { font-size: 18px; color: #e0e0e0; margin: 4px 0; }
+        .riddle-hint { font-size: 14px; color: #a0a0a5; font-style: italic; max-width: 80%; margin-bottom: 10px; }
+        .admin-note { font-size: 11px; color: #64ffda; margin-top: 5px; opacity: 0.7; }
+        
+        /* Interactive Claim Action Button styling */
+        .claim-btn {
+            display: none; /* Hidden until burning hot */
+            background: #00e676;
+            color: #000;
+            border: none;
+            padding: 10px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 0 15px #00e676;
+            transition: 0.2s ease;
+        }
+        .claim-btn:hover { transform: scale(1.05); }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div id="radar-panel">
+        <div id="radar-status" class="status-badge freezing">?? Initializing Radar...</div>
+        <div id="radar-distance" class="distance-text">Searching for satellite GPS...</div>
+        <div id="radar-hint" class="riddle-hint">Walk around your area to pick up cache anomalies.</div>
+        
+        <button id="claim-button" class="claim-btn">????? LOG VISIT & CLAIM</button>
+        
+        <div class="admin-note">??? Developer Mode: Double-click anywhere on the map to drop a new Cache!</div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([20.0, 0.0], 2);
+        let userLocationMarker = null;
+        let allTreasures = [];
+        let activeClosestTreasure = null;
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; 
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))); 
+        }
+
+        function loadCachesFromDatabase() {
+            fetch('/api/treasures')
+                .then(response => response.json())
+                .then(treasures => {
+                    allTreasures = treasures;
+                    map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+                    treasures.forEach(treasure => {
+                        if (treasure.lat && treasure.lng) {
+                            L.marker([treasure.lat, treasure.lng]).addTo(map).bindPopup(`<b>????? Cache Target</b><br>${treasure.riddle}`);
+                        }
+                    });
+                });
+        }
+
+        function updateRadar(userLat, userLng) {
+            if (allTreasures.length === 0) return;
+
+            let closestTreasure = null;
+            let shortestDistance = Infinity;
+
+            allTreasures.forEach(treasure => {
+                const distance = calculateDistance(userLat, userLng, treasure.lat, treasure.lng);
+                if (distance < shortestDistance) {
+                    shortestDistance = distance;
+                    closestTreasure = treasure;
+                }
+            });
+
+            activeClosestTreasure = closestTreasure;
+
+            const distanceDiv = document.getElementById('radar-distance');
+            const statusDiv = document.getElementById('radar-status');
+            const hintDiv = document.getElementById('radar-hint');
+            const claimBtn = document.getElementById('claim-button');
+
+            distanceDiv.innerText = `Closest Cache: ${Math.round(shortestDistance)} meters away`;
+            hintDiv.innerText = `Current Area Riddle: "${closestTreasure.riddle}"`;
+
+            statusDiv.className = "status-badge"; 
+            
+            // Check proximity ranges
+            if (shortestDistance <= 20) {
+                statusDiv.innerText = "?? Burning Hot! ??";
+                statusDiv.classList.add("burning");
+                claimBtn.style.display = "block";  // UNLOCK ACTION BUTTON
+            } else if (shortestDistance <= 250) {
+                statusDiv.innerText = "?? Getting Warm ??";
+                statusDiv.classList.add("warm");
+                claimBtn.style.display = "none";
+            } else {
+                statusDiv.innerText = "?? Freezing Cold ??";
+                statusDiv.classList.add("freezing");
+                claimBtn.style.display = "none";
+            }
+        }
+
+        // Trigger action click event to handle checkout logging
+        document.getElementById('claim-button').addEventListener('click', () => {
+            if (!activeClosestTreasure) return;
+            
+            const name = prompt("Congratulations Explorer! Enter your explorer tag name for the logbook:");
+            if (name) {
+                fetch('/api/claims', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: name,
+                        treasure_id: activeClosestTreasure.id || 1
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(err => alert("Error logging claim: " + err));
+            }
+        });
+
+        map.on('dblclick', function(e) {
+            const riddleText = prompt("Enter a riddle or clue hint for this physical location:");
+            if (riddleText) {
+                fetch('/api/treasures', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lat: e.latlng.lat, lng: e.latlng.lng, riddle: riddleText })
+                })
+                .then(() => { alert("Cache successfully hidden!"); loadCachesFromDatabase(); });
+            }
+        });
+
+        loadCachesFromDatabase();
+
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition((position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                map.setView([lat, lng], 15);
+                if (!userLocationMarker) {
+                    userLocationMarker = L.circle([lat, lng], { color: '#007bff', fillColor: '#007bff', fillOpacity: 0.4, radius: 25 }).addTo(map);
+                } else {
+                    userLocationMarker.setLatLng([lat, lng]);
+                }
+                updateRadar(lat, lng);
+            }, null, { enableHighAccuracy: true });
+        }
+    </script>
+</body>
+</html>
