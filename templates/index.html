@@ -55,9 +55,11 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Initialize Map immediately
-        const map = L.map('map').setView([20.0, 0.0], 2);
+        // 1. Initialize Map
+        const map = L.map('map').setView([28.02, 73.31], 15); // Starting at Bikaner
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        let userMarker = null;
 
         // 2. Fetch Treasures
         fetch('/api/treasures')
@@ -85,12 +87,20 @@
         }
         updateLeaderboard();
 
-        // 4. GPS Tracking (Background Process)
+        // 4. GPS Tracking with User Marker
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
+                const { latitude, longitude } = position.coords;
+                
                 document.getElementById('radar-status').innerText = "GPS LOCKED";
                 document.getElementById('radar-status').className = "status-badge warm";
                 document.getElementById('radar-distance').innerText = "Looking for nearby treasure...";
+
+                if (!userMarker) {
+                    userMarker = L.circleMarker([latitude, longitude], { color: 'blue', radius: 8 }).addTo(map);
+                } else {
+                    userMarker.setLatLng([latitude, longitude]);
+                }
             });
         }
     </script>
