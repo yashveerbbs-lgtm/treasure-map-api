@@ -4,104 +4,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1a1a2e">
-    
-    <title>Geocatcher App</title>
+    <title>Geocatcher</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
     <style>
-        /* Base App Styling */
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
-            background: #000; overflow: hidden; /* Prevents scrolling */
-        }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #000; overflow: hidden; }
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
-        /* Full Screen Map */
-        #map { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; 
-        }
+        /* Glassmorphism Defaults */
+        .glass { background: rgba(26, 26, 46, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
         
-        /* Glassmorphic Floating Panels */
-        .glass-panel {
-            background: rgba(26, 26, 46, 0.75); 
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px); /* For iPhones */
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            color: #fff;
-            z-index: 1000;
-        }
+        /* Login Overlay */
+        #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
+        .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; }
+        .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; }
 
-        /* Top Panel: Leaderboard */
-        #top-panel {
-            position: absolute; top: 15px; left: 15px; right: 15px; 
-            border-radius: 20px; padding: 15px;
-            max-height: 120px; overflow-y: auto;
-        }
-
-        .header-title { margin: 0 0 10px 0; font-size: 14px; color: #64ffda; text-transform: uppercase; letter-spacing: 1px; }
+        /* App Panels */
+        #top-panel { position: absolute; top: 15px; left: 15px; right: 15px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; }
+        .header-title { margin: 0 0 10px 0; font-size: 14px; color: #64ffda; text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
 
-        /* Bottom Panel: Radar */
-        #bottom-panel {
-            position: absolute; bottom: 25px; left: 15px; right: 15px; 
-            border-radius: 25px; padding: 25px 20px; 
-            text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-
-        /* Radar Status Badges */
-        .status-badge { 
-            font-size: 22px; font-weight: 800; padding: 10px 30px; 
-            border-radius: 30px; margin-bottom: 8px; text-transform: uppercase; 
-            letter-spacing: 1px; width: 80%;
-        }
+        #bottom-panel { position: absolute; bottom: 25px; left: 15px; right: 15px; border-radius: 25px; padding: 25px 20px; text-align: center; z-index: 1000; }
+        .status-badge { font-size: 20px; font-weight: 800; padding: 10px 30px; border-radius: 30px; margin-bottom: 8px; display: inline-block; width: 80%; }
         .freezing { background: linear-gradient(135deg, #007bff, #00d2ff); color: white; }
         .warm { background: linear-gradient(135deg, #f2994a, #f2c94c); color: #000; }
         .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
         
-        #radar-distance { font-size: 15px; color: #b2bec3; font-weight: 500; }
+        #claim-button { display: none; margin-top: 15px; }
 
-        /* Big Action Button */
-        .claim-btn { 
-            display: none; background: linear-gradient(135deg, #00e676, #1de9b6);
-            color: #000; border: none; padding: 15px 40px; font-size: 18px; font-weight: 800; 
-            border-radius: 30px; cursor: pointer; margin-top: 15px; width: 90%;
-            box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); text-transform: uppercase;
-        }
+        /* Add Treasure Floating Button */
+        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #64ffda; color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        /* Modal for adding cache */
+        #add-modal { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; }
+        .modal-content { padding: 30px; border-radius: 20px; width: 80%; max-width: 350px; text-align: left;}
+        .modal-content input, .modal-content textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: none; box-sizing: border-box; font-family: inherit;}
+        .close-btn { background: #ff416c; margin-top: 10px; color: white; }
 
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+        /* Custom Leaflet Popup Styling */
+        .leaflet-popup-content-wrapper { background: rgba(26, 26, 46, 0.95); color: #fff; border-radius: 12px; border: 1px solid #64ffda;}
+        .leaflet-popup-tip { background: rgba(26, 26, 46, 0.95); }
+        .popup-img { width: 100%; border-radius: 8px; margin-top: 5px; max-height: 150px; object-fit: cover; }
+        .popup-title { font-size: 16px; font-weight: bold; color: #64ffda; margin: 0; }
+        .popup-desc { font-size: 13px; color: #ccc; margin-top: 5px; }
 
-        /* Hide Leaflet Watermarks for cleaner app look */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
-
-    <div id="top-panel" class="glass-panel">
-        <h3 class="header-title">?? Top Explorers</h3>
-        <ul id="leaderboard-list">
-            <li>Loading...</li>
-        </ul>
+    <div id="login-screen" class="glass">
+        <div class="login-box glass">
+            <h2>Welcome to Geocatcher</h2>
+            <p>Enter your Explorer Name to begin.</p>
+            <input type="text" id="username-input" placeholder="e.g. IndianaJones99">
+            <button class="action-btn" onclick="login()">Start Exploring</button>
+        </div>
     </div>
 
-    <div id="bottom-panel" class="glass-panel">
+    <div id="add-modal" class="glass">
+        <div class="modal-content glass">
+            <h3 style="margin-top:0; color:#64ffda;">Hide a Cache Here</h3>
+            <label>Title</label>
+            <input type="text" id="cache-title" placeholder="Secret Gold Coin">
+            <label>Description</label>
+            <textarea id="cache-desc" rows="3" placeholder="Hidden under the old oak tree..."></textarea>
+            <label>Image Link (URL)</label>
+            <input type="text" id="cache-img" placeholder="https://example.com/image.jpg">
+            
+            <button class="action-btn" onclick="submitCache()">Hide it!</button>
+            <button class="action-btn close-btn" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="map"></div>
+    <button id="add-btn" onclick="openModal()">+</button>
+
+    <div id="top-panel" class="glass">
+        <h3 class="header-title">?? Top Explorers</h3>
+        <ul id="leaderboard-list"><li>Loading...</li></ul>
+    </div>
+
+    <div id="bottom-panel" class="glass">
         <div id="radar-status" class="status-badge freezing">RADAR READY</div>
-        <div id="radar-distance">Syncing with satellites...</div>
-        <button id="claim-button" class="claim-btn">LOG VISIT</button>
+        <div id="radar-distance" style="color:#b2bec3;">Syncing with satellites...</div>
+        <button id="claim-button" class="action-btn">LOG VISIT</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Initialize Map
-        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map); // Sleek Dark Mode Map!
+        let myUsername = localStorage.getItem('geocatcher_username');
+        let currentLat = 0;
+        let currentLng = 0;
 
-        // Add Zoom Control lower down so it doesn't hit the top panel
+        // Login Logic
+        if (myUsername) {
+            document.getElementById('login-screen').style.display = 'none';
+        }
+
+        function login() {
+            const name = document.getElementById('username-input').value.trim();
+            if (name) {
+                localStorage.setItem('geocatcher_username', name);
+                myUsername = name;
+                document.getElementById('login-screen').style.display = 'none';
+            } else {
+                alert("Please enter a name!");
+            }
+        }
+
+        // Map Setup
+        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
         L.control.zoom({ position: 'topleft' }).addTo(map);
 
         let userMarker = null;
@@ -109,22 +126,30 @@
         let treasures = []; 
         let closestTreasure = null; 
 
-        // Fetch Treasures
-        fetch('/api/treasures')
-            .then(res => res.json())
-            .then(data => {
-                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
-                treasures = data.filter(t => {
-                    const cacheId = t.lat + ',' + t.lng;
-                    return !claimedCaches.includes(cacheId);
-                });
-                
-                treasures.forEach(t => {
-                    t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(t.riddle);
-                });
-            });
+        // Fetch Treasures with Beautiful Popups
+        function loadTreasures() {
+            fetch('/api/treasures')
+                .then(res => res.json())
+                .then(data => {
+                    const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
+                    
+                    // Clear existing markers to prevent duplicates on reload
+                    treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
 
-        // Update Leaderboard
+                    treasures = data.filter(t => !claimedCaches.includes(t.lat + ',' + t.lng));
+                    
+                    treasures.forEach(t => {
+                        // Create the beautiful HTML for the popup
+                        let popupHTML = `<p class="popup-title">${t.title || 'Mystery Cache'}</p>`;
+                        if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
+                        if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
+
+                        t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(popupHTML);
+                    });
+                });
+        }
+        loadTreasures();
+
         function updateLeaderboard() {
             fetch('/api/leaderboard')
                 .then(res => res.json())
@@ -136,27 +161,25 @@
                         li.innerHTML = `<strong>${entry.username}</strong>: ${entry.count} found`;
                         list.appendChild(li);
                     });
-                })
-                .catch(() => { document.getElementById('leaderboard-list').innerText = "Offline"; });
+                });
         }
         updateLeaderboard();
 
         // GPS Tracking
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
-                const { latitude, longitude } = position.coords;
+                currentLat = position.coords.latitude;
+                currentLng = position.coords.longitude;
 
                 if (!userMarker) {
-                    userMarker = L.circleMarker([latitude, longitude], { 
-                        color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 10, weight: 3
-                    }).addTo(map);
+                    userMarker = L.circleMarker([currentLat, currentLng], { color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 10, weight: 3 }).addTo(map);
                 } else {
-                    userMarker.setLatLng([latitude, longitude]);
+                    userMarker.setLatLng([currentLat, currentLng]);
                 }
                 userMarker.bringToFront();
                 
                 if (isFirstLock) {
-                    map.setView([latitude, longitude], 17);
+                    map.setView([currentLat, currentLng], 17);
                     isFirstLock = false;
                 }
 
@@ -165,7 +188,7 @@
                     let currentClosest = null;
 
                     treasures.forEach(t => {
-                        let dist = map.distance([latitude, longitude], [t.lat, t.lng]);
+                        let dist = map.distance([currentLat, currentLng], [t.lat, t.lng]);
                         if (dist < shortestDistance) {
                             shortestDistance = dist;
                             currentClosest = t; 
@@ -192,48 +215,64 @@
                         statusBadge.className = "status-badge freezing";
                         claimBtn.style.display = "none";
                     }
-                } else {
-                    document.getElementById('radar-status').innerText = "AREA CLEARED";
-                    document.getElementById('radar-status').className = "status-badge freezing";
-                    document.getElementById('radar-distance').innerText = "No caches remaining nearby.";
-                    document.getElementById('claim-button').style.display = "none";
                 }
             });
         }
 
         // Claim Logic
         document.getElementById('claim-button').addEventListener('click', () => {
-            if (!closestTreasure) return;
+            if (!closestTreasure || !myUsername) return;
 
-            const username = prompt("?? You found it! Enter your Explorer Name:");
-            
-            if (username) {
-                fetch('/api/claim', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username, lat: closestTreasure.lat, lng: closestTreasure.lng })
-                })
-                .then(res => res.json())
-                .then(data => {
-                    alert("?? Treasure Logged Successfully!");
-                    map.removeLayer(closestTreasure.marker);
-                    
-                    const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
-                    claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
-                    localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
-                    
-                    treasures = treasures.filter(t => t !== closestTreasure);
-                    closestTreasure = null;
-                    
-                    document.getElementById('claim-button').style.display = "none"; 
-                    updateLeaderboard(); 
-                })
-                .catch(err => {
-                    alert("Error saving claim to the database.");
-                    console.error(err);
-                });
-            }
+            fetch('/api/claim', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert("?? Treasure Logged Successfully!");
+                map.removeLayer(closestTreasure.marker);
+                
+                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
+                claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
+                localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
+                
+                treasures = treasures.filter(t => t !== closestTreasure);
+                closestTreasure = null;
+                
+                document.getElementById('claim-button').style.display = "none"; 
+                updateLeaderboard(); 
+            });
         });
+
+        // Hide Cache Modal Logic
+        function openModal() { document.getElementById('add-modal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('add-modal').style.display = 'none'; }
+
+        function submitCache() {
+            const title = document.getElementById('cache-title').value;
+            const desc = document.getElementById('cache-desc').value;
+            const img = document.getElementById('cache-img').value;
+
+            if (!title) { alert("Please give it a title!"); return; }
+
+            fetch('/api/treasures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat: currentLat, lng: currentLng, title: title, description: desc, image_url: img })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert("Location Hidden Successfully!");
+                closeModal();
+                // Clear the form
+                document.getElementById('cache-title').value = '';
+                document.getElementById('cache-desc').value = '';
+                document.getElementById('cache-img').value = '';
+                // Reload map pins
+                loadTreasures(); 
+            });
+        }
     </script>
 </body>
 </html>
