@@ -51,26 +51,36 @@
             return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))); 
         }
 
-        function loadCachesFromDatabase() {
-            fetch('/api/treasures')
-                .then(response => response.json())
-                .then(treasures => {
-                    // Only load treasures we haven't claimed yet
-                    allTreasures = treasures.filter(t => !claimedTreasures.has(t.riddle));
-                    map.eachLayer((layer) => { if (layer instanceof L.Marker) map.removeLayer(layer); });
-                    allTreasures.forEach(treasure => {
-                        if (treasure.lat && treasure.lng) {
-                            L.marker([treasure.lat, treasure.lng]).addTo(map).bindPopup(`<b>????? Cache Target</b><br>${treasure.riddle}`);
-                        }
-                    });
-                    
-                    // Force radar to update after loading
-                    if (userLocationMarker) {
-                        const pos = userLocationMarker.getLatLng();
-                        updateRadar(pos.lat, pos.lng);
-                    }
-                });
-        }
+function loadCachesFromDatabase() {
+    fetch('/api/treasures')
+        .then(response => response.json())
+        .then(treasures => {
+            // Only load treasures we haven't claimed yet
+            allTreasures = treasures.filter(t => !claimedTreasures.has(t.riddle));
+            
+            // Clear existing markers from the map
+            map.eachLayer((layer) => { 
+                if (layer instanceof L.Marker) { 
+                    map.removeLayer(layer); 
+                } 
+            });
+            
+            // Add new markers using the correct 'lat' and 'lng' columns
+            allTreasures.forEach(treasure => {
+                if (treasure.lat && treasure.lng) {
+                    L.marker([treasure.lat, treasure.lng])
+                     .addTo(map)
+                     .bindPopup(`<b>Cache Target</b><br>${treasure.riddle}`);
+                }
+            });
+            
+            // Force radar to update after loading
+            if (userLocationMarker) {
+                const pos = userLocationMarker.getLatLng();
+                updateRadar(pos.lat, pos.lng);
+            }
+        });
+}
 
         function updateRadar(userLat, userLng) {
             if (allTreasures.length === 0) {
