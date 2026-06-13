@@ -4,25 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2857/2857355.png">
     <title>Geocatcher</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #000; overflow: hidden; }
+        /* === THEME VARIABLES === */
+        :root {
+            --bg-color: #000;
+            --glass-bg: rgba(26, 26, 46, 0.85);
+            --text-color: #fff;
+            --accent-color: #64ffda;
+            --input-bg: rgba(0,0,0,0.3);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --popup-bg: rgba(26, 26, 46, 0.95);
+            --modal-overlay: rgba(0,0,0,0.7);
+        }
+
+        body.light-mode {
+            --bg-color: #e0e5ec;
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #1a1a2e;
+            --accent-color: #00b894;
+            --input-bg: rgba(0,0,0,0.05);
+            --border-color: rgba(0, 0, 0, 0.15);
+            --popup-bg: rgba(255, 255, 255, 0.95);
+            --modal-overlay: rgba(255,255,255,0.6);
+        }
+
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); overflow: hidden; transition: background 0.3s; }
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         
         /* Glassmorphism Defaults */
-        .glass { background: rgba(26, 26, 46, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); }
+        .glass { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); color: var(--text-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: background 0.3s, color 0.3s; }
         
         /* Login Overlay */
-        #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg-color); }
         .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
-        .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; }
-        .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; }
+        .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; background: var(--input-bg); color: var(--text-color); }
+        .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); }
 
         /* App Panels */
         #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; }
-        .header-title { margin: 0 0 10px 0; font-size: 14px; color: #64ffda; text-transform: uppercase; }
+        .header-title { margin: 0 0 10px 0; font-size: 14px; color: var(--accent-color); text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
 
         #bottom-panel { position: absolute; bottom: 25px; left: 15px; right: 15px; border-radius: 25px; padding: 25px 20px; text-align: center; z-index: 1000; }
@@ -34,32 +60,59 @@
         #claim-button { display: none; margin-top: 15px; }
 
         /* Floating Buttons */
-        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: #64ffda; color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        #profile-open-btn { position: absolute; top: 15px; right: 15px; padding: 10px 15px; border-radius: 20px; background: #1a1a2e; color: #64ffda; border: 1px solid #64ffda; font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
+        /* Top Navigation Buttons */
+        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
+        #profile-open-btn { right: 15px; }
+        #theme-btn { right: 120px; } 
 
         /* Modals */
-        .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); }
+        .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 80vh; overflow-y: auto;}
-        .modal-content input[type="text"], .modal-content textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: none; box-sizing: border-box; font-family: inherit;}
-        .close-btn { background: #ff416c; margin-top: 10px; color: white; }
+        .modal-content h2, .modal-content h3 { color: var(--accent-color); }
+        .modal-content input[type="text"], .modal-content textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
+        .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; }
         
         /* Profile Specifics */
-        .profile-stat { display: flex; justify-content: space-between; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
-        .friend-li { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
+        .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
+        .friend-li { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
         .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .accept-btn { background: #00e676; color: #000; }
         .reject-btn { background: #ff416c; color: #fff; }
 
         /* Custom Leaflet Popup Styling */
-        .leaflet-popup-content-wrapper { background: rgba(26, 26, 46, 0.95); color: #fff; border-radius: 12px; border: 1px solid #64ffda;}
-        .leaflet-popup-tip { background: rgba(26, 26, 46, 0.95); }
+        .leaflet-popup-content-wrapper { background: var(--popup-bg); color: var(--text-color); border-radius: 12px; border: 1px solid var(--accent-color);}
+        .leaflet-popup-tip { background: var(--popup-bg); }
         .popup-img { width: 100%; border-radius: 8px; margin-top: 5px; max-height: 150px; object-fit: cover; }
-        .popup-title { font-size: 16px; font-weight: bold; color: #64ffda; margin: 0; }
-        .popup-desc { font-size: 13px; color: #ccc; margin-top: 5px; }
+        .popup-title { font-size: 16px; font-weight: bold; color: var(--accent-color); margin: 0; }
+        .popup-desc { font-size: 13px; margin-top: 5px; }
 
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
+
+        /* ==========================================
+           📱 MOBILE-FRIENDLY RESPONSIVE DESIGN
+           ========================================== */
+        @media (max-width: 600px) {
+            #top-panel { width: 130px; padding: 10px; top: 10px; left: 10px; max-height: 90px; }
+            .header-title { font-size: 12px; margin-bottom: 5px; }
+            #leaderboard-list { font-size: 11px; }
+
+            .top-btn { padding: 8px 12px; font-size: 12px; top: 10px; }
+            #profile-open-btn { right: 10px; }
+            #theme-btn { right: 95px; }
+
+            #bottom-panel { 
+                padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); 
+                bottom: 10px; left: 10px; right: 10px; 
+            }
+            .status-badge { font-size: 16px; width: 90%; }
+
+            #add-btn { width: 65px; height: 65px; bottom: 130px; right: 15px; font-size: 35px; }
+            .modal-content { width: 92%; padding: 20px; }
+        }
     </style>
 </head>
 <body>
@@ -74,12 +127,12 @@
 
     <div id="add-modal" class="modal-overlay">
         <div class="modal-content glass">
-            <h3 style="margin-top:0; color:#64ffda;">Hide a Cache Here</h3>
-            <input type="text" id="cache-title" placeholder="Cache Title (e.g. Balle Balle)">
+            <h3 style="margin-top:0;">Hide a Cache Here</h3>
+            <input type="text" id="cache-title" placeholder="Cache Title">
             <textarea id="cache-desc" rows="3" placeholder="Clues or description..."></textarea>
             
-            <label style="font-size: 13px; color: #64ffda;">Attach a Photo (Optional)</label>
-            <input type="file" id="cache-img" accept="image/*" capture="environment" style="background: rgba(0,0,0,0.3); color: #fff; padding: 10px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 15px;">
+            <label style="font-size: 13px; font-weight: bold; color: var(--accent-color);">Attach a Photo (Optional)</label>
+            <input type="file" id="cache-img" accept="image/*" capture="environment" style="background: var(--input-bg); color: var(--text-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); width: 100%; box-sizing: border-box; margin-bottom: 15px; margin-top: 5px;">
             
             <button class="action-btn" onclick="submitCache()">Hide it!</button>
             <button class="action-btn close-btn" onclick="closeModal('add-modal')">Cancel</button>
@@ -88,13 +141,13 @@
 
     <div id="profile-modal" class="modal-overlay">
         <div class="modal-content glass">
-            <h2 id="profile-name" style="margin-top:0; color:#64ffda; text-align: center;">My Profile</h2>
+            <h2 id="profile-name" style="margin-top:0; text-align: center;">My Profile</h2>
             
             <div class="profile-stat"><span>Rank:</span> <strong id="profile-rank">Loading...</strong></div>
             <div class="profile-stat"><span>Caches Found:</span> <strong id="profile-found">0</strong></div>
             <div class="profile-stat"><span>Caches Hidden:</span> <strong id="profile-hidden">0</strong></div>
             
-            <hr style="border: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+            <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
             
             <h3 style="margin-bottom: 5px;">Send Friend Request</h3>
             <div style="display: flex; gap: 5px;">
@@ -103,17 +156,18 @@
             </div>
 
             <h3 style="margin-bottom: 5px; margin-top: 20px;">Pending Requests</h3>
-            <div id="pending-list" style="font-size: 14px; color: #ccc;">No pending requests.</div>
+            <div id="pending-list" style="font-size: 14px;">No pending requests.</div>
 
             <h3 style="margin-bottom: 5px; margin-top: 20px;">My Friends</h3>
-            <div id="friends-list" style="font-size: 14px; color: #ccc;">No friends added yet.</div>
+            <div id="friends-list" style="font-size: 14px;">No friends added yet.</div>
 
             <button class="action-btn close-btn" style="margin-top: 25px;" onclick="closeModal('profile-modal')">Close Profile</button>
         </div>
     </div>
 
     <div id="map"></div>
-    <button id="profile-open-btn" onclick="openProfile()">👤 Profile</button>
+    <button id="theme-btn" class="top-btn" onclick="toggleTheme()">🌓 Theme</button>
+    <button id="profile-open-btn" class="top-btn" onclick="openProfile()">👤 Profile</button>
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
 
     <div id="top-panel" class="glass">
@@ -123,19 +177,45 @@
 
     <div id="bottom-panel" class="glass">
         <div id="radar-status" class="status-badge freezing">RADAR READY</div>
-        <div id="radar-distance" style="color:#b2bec3;">Syncing with satellites...</div>
+        <div id="radar-distance" style="color:var(--text-color); opacity: 0.8;">Syncing with satellites...</div>
         <button id="claim-button" class="action-btn">LOG VISIT</button>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // ==========================================
+        // THEME & INITIALIZATION
+        // ==========================================
         let myUsername = localStorage.getItem('geocatcher_username');
+        let currentTheme = localStorage.getItem('geocatcher_theme') || 'dark';
         let currentLat = 0; let currentLng = 0;
+        let mapTileLayer;
 
-        // Login Logic
-        if (myUsername) {
-            document.getElementById('login-screen').style.display = 'none';
+        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
+        L.control.zoom({ position: 'topleft' }).addTo(map);
+        
+        function applyTheme(theme) {
+            if (mapTileLayer) { map.removeLayer(mapTileLayer); }
+            
+            if (theme === 'light') {
+                document.body.classList.add('light-mode');
+                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            } else {
+                document.body.classList.remove('light-mode');
+                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            }
+            localStorage.setItem('geocatcher_theme', theme);
+            currentTheme = theme;
         }
+
+        function toggleTheme() {
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        }
+
+        applyTheme(currentTheme);
+
+        if (myUsername) { document.getElementById('login-screen').style.display = 'none'; }
 
         function login() {
             const name = document.getElementById('username-input').value.trim();
@@ -146,15 +226,12 @@
             } else { alert("Please enter a name!"); }
         }
 
-        // Map Setup
-        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-        L.control.zoom({ position: 'topleft' }).addTo(map);
-
+        // ==========================================
+        // CACHE & RADAR LOGIC
+        // ==========================================
         let userMarker = null; let isFirstLock = true;
         let treasures = []; let closestTreasure = null; 
 
-        // Fetch Data Functions
         function loadTreasures() {
             fetch('/api/treasures').then(res => res.json()).then(data => {
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
@@ -163,7 +240,7 @@
                 
                 treasures.forEach(t => {
                     let popupHTML = `<p class="popup-title">${t.title || 'Mystery Cache'}</p>`;
-                    if (t.creator) popupHTML += `<span style="font-size:11px; color:#aaa;">Hidden by: ${t.creator}</span>`;
+                    if (t.creator) popupHTML += `<span style="font-size:11px; opacity: 0.7;">Hidden by: ${t.creator}</span>`;
                     if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
                     if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
                     t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(popupHTML);
@@ -185,7 +262,6 @@
         
         loadTreasures(); updateLeaderboard();
 
-        // GPS Tracking
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
                 currentLat = position.coords.latitude; currentLng = position.coords.longitude;
@@ -218,22 +294,18 @@
                         statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
                     }
                 }
-            });
+            }, 
+            (error) => { console.log("GPS Error: ", error); }, 
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }); 
         }
 
-        // Action Buttons Logic
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure || !myUsername) return;
             fetch('/api/claim', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
             }).then(res => res.json()).then(data => {
-                
-                if (data.error) {
-                    alert("Uh oh! Database Error: " + data.error);
-                    return; 
-                }
-
+                if (data.error) { alert("Uh oh! Database Error: " + data.error); return; }
                 alert("🎉 Treasure Logged Successfully!");
                 map.removeLayer(closestTreasure.marker);
                 
@@ -247,7 +319,6 @@
             });
         });
 
-        // HIDE CACHE LOGIC WITH IMAGE UPLOADS
         function submitCache() {
             const title = document.getElementById('cache-title').value;
             const desc = document.getElementById('cache-desc').value;
@@ -255,27 +326,16 @@
             
             if (!title) { alert("Please give it a title!"); return; }
 
-            // To send files, we must pack everything into a "FormData" object
             const formData = new FormData();
             formData.append('lat', currentLat);
             formData.append('lng', currentLng);
             formData.append('title', title);
             formData.append('description', desc);
             formData.append('creator', myUsername);
-            
-            // If they snapped a photo or picked one from gallery, attach the file!
-            if (imgInput.files.length > 0) {
-                formData.append('image', imgInput.files[0]);
-            }
+            if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
 
-            fetch('/api/treasures', {
-                method: 'POST',
-                body: formData // Note: no headers needed for FormData, the browser handles it automatically!
-            }).then(res => res.json()).then(data => {
-                if(data.error) {
-                    alert("Error saving: " + data.error);
-                    return;
-                }
+            fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
+                if(data.error) { alert("Error saving: " + data.error); return; }
                 alert("Location Hidden Successfully!");
                 closeModal('add-modal');
                 document.getElementById('cache-title').value = ''; 
@@ -285,27 +345,22 @@
             });
         }
 
-        // Modal Helpers
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         // ==========================================
         // PROFILE & FRIENDS LOGIC
         // ==========================================
-        
         function openProfile() {
             if(!myUsername) return;
             document.getElementById('profile-name').innerText = myUsername + "'s Profile";
             openModal('profile-modal');
             
-            // 1. Fetch Stats
             fetch('/api/profile/' + myUsername).then(r => r.json()).then(data => {
                 document.getElementById('profile-rank').innerText = data.rank || 'Unknown';
                 document.getElementById('profile-found').innerText = data.found || 0;
                 document.getElementById('profile-hidden').innerText = data.hidden || 0;
             });
-
-            // 2. Fetch Friends
             loadFriends();
         }
 
@@ -314,12 +369,10 @@
                 const fList = document.getElementById('friends-list');
                 const pList = document.getElementById('pending-list');
                 
-                // Render Friends
                 if(data.friends && data.friends.length > 0) {
                     fList.innerHTML = data.friends.map(f => `<div class="friend-li"><span>🤝 ${f}</span></div>`).join('');
                 } else { fList.innerHTML = "No friends added yet."; }
 
-                // Render Pending Requests
                 if(data.pending && data.pending.length > 0) {
                     pList.innerHTML = data.pending.map(p => `
                         <div class="friend-li">
@@ -337,16 +390,12 @@
         function sendFriendRequest() {
             const friendName = document.getElementById('friend-request-name').value.trim();
             if(!friendName) return;
-
             fetch('/api/friend/request', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ requester: myUsername, receiver: friendName })
             }).then(r => r.json()).then(data => {
                 if(data.error) alert(data.error);
-                else {
-                    alert("Request sent to " + friendName + "!");
-                    document.getElementById('friend-request-name').value = '';
-                }
+                else { alert("Request sent to " + friendName + "!"); document.getElementById('friend-request-name').value = ''; }
             });
         }
 
@@ -354,9 +403,7 @@
             fetch('/api/friend/respond', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ requester: requesterName, receiver: myUsername, action: action })
-            }).then(r => r.json()).then(data => {
-                loadFriends(); // Reload the lists instantly
-            });
+            }).then(() => loadFriends());
         }
     </script>
 </body>
