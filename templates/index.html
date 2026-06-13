@@ -28,12 +28,14 @@
         .status-badge { font-size: 20px; font-weight: bold; padding: 8px 25px; border-radius: 30px; margin-bottom: 6px; text-transform: uppercase; }
         .freezing { background-color: #007bff; }
         .warm { background-color: #fd7e14; }
+        .burning { background-color: #dc3545; animation: pulse 1s infinite; }
         
         .claim-btn { 
             display: none; background: linear-gradient(135deg, #00e676, #00bfa5);
             color: #000; border: none; padding: 12px 35px; font-size: 16px; font-weight: bold; 
-            border-radius: 25px; cursor: pointer;
+            border-radius: 25px; cursor: pointer; margin-top: 15px;
         }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -56,16 +58,18 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // 1. Initialize Map
-        const map = L.map('map').setView([28.02, 73.31], 15); // Starts at Bikaner
+        const map = L.map('map').setView([28.02, 73.31], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         let userMarker = null;
-        let isFirstLock = true; // Tracks the first GPS lock so it only auto-centers once
+        let isFirstLock = true;
+        let treasures = []; // New variable to store the treasures
 
         // 2. Fetch Treasures
         fetch('/api/treasures')
             .then(res => res.json())
             .then(data => {
+                treasures = data; // Save the data to our list
                 data.forEach(t => {
                     L.marker([t.lat, t.lng]).addTo(map).bindPopup(t.riddle);
                 });
@@ -88,36 +92,57 @@
         }
         updateLeaderboard();
 
-        // 4. GPS Tracking with Better User Marker
+        // 4. GPS Tracking & Radar Distance Logic
         if (navigator.geolocation) {
             navigator.geolocation.watchPosition((position) => {
                 const { latitude, longitude } = position.coords;
-                
-                document.getElementById('radar-status').innerText = "GPS LOCKED";
-                document.getElementById('radar-status').className = "status-badge warm";
-                document.getElementById('radar-distance').innerText = "Looking for nearby treasure...";
 
-                // Create a bigger, brighter green dot for the user
                 if (!userMarker) {
                     userMarker = L.circleMarker([latitude, longitude], { 
-                        color: '#00ff00', 
-                        fillColor: '#00ff00', 
-                        fillOpacity: 1, 
-                        radius: 12 
+                        color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 12 
                     }).addTo(map);
                 } else {
                     userMarker.setLatLng([latitude, longitude]);
                 }
-                
-                // Force the user dot to stay on top of the blue pins
                 userMarker.bringToFront();
                 
-                // Only auto-center the very first time the GPS locks
                 if (isFirstLock) {
-                    map.setView([latitude, longitude], 17); // Zoomed in a bit closer
+                    map.setView([latitude, longitude], 17);
                     isFirstLock = false;
                 }
 
+                // RADAR LOGIC: Find the closest treasure
+                if (treasures.length > 0) {
+                    let shortestDistance = Infinity;
+
+                    treasures.forEach(t => {
+                        let dist = map.distance([latitude, longitude], [t.lat, t.lng]);
+                        if (dist < shortestDistance) {
+                            shortestDistance = dist;
+                        }
+                    });
+
+                    // Update the UI
+                    const distanceMeters = Math.round(shortestDistance);
+                    document.getElementById('radar-distance').innerText = `Nearest cache is ${distanceMeters} meters away`;
+
+                    const statusBadge = document.getElementById('radar-status');
+                    const claimBtn = document.getElementById('claim-button');
+
+                    if (distanceMeters <= 20) {
+                        statusBadge.innerText = "BURNING HOT!";
+                        statusBadge.className = "status-badge burning";
+                        claimBtn.style.display = "block"; // Show the claim button!
+                    } else if (distanceMeters <= 100) {
+                        statusBadge.innerText = "WARMING UP";
+                        statusBadge.className = "status-badge warm";
+                        claimBtn.style.display = "none";
+                    } else {
+                        statusBadge.innerText = "FREEZING COLD";
+                        statusBadge.className = "status-badge freezing";
+                        claimBtn.style.display = "none";
+                    }
+                }
             });
         }
     </script>
