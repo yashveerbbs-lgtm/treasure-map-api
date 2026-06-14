@@ -48,7 +48,6 @@ def subscribe():
     username = data.get('username')
     sub_info = data.get('sub_info')
     
-    # Remove old subscriptions for this user, then insert the new one
     supabase.table('subscriptions').delete().eq('username', username).execute()
     supabase.table('subscriptions').insert({"username": username, "sub_info": sub_info}).execute()
     return jsonify({"status": "success"}), 200
@@ -57,7 +56,7 @@ def broadcast_notification(title, body, exclude_user=None):
     subs = supabase.table('subscriptions').select('*').execute().data
     for sub in subs:
         if sub['username'] == exclude_user:
-            continue # Don't notify the person who just hid the cache
+            continue
         try:
             webpush(
                 subscription_info=sub['sub_info'],
@@ -98,9 +97,7 @@ def handle_treasures():
         supabase.table('treasures').insert({"lat": lat, "lng": lng, "title": title, "description": desc, "image_url": image_url, "creator": creator}).execute()
         add_log(creator, f"hid a new cache: {title}")
         
-        # Trigger Push Notification to all users
         broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
-        
         return jsonify({"message": "Success"}), 200
 
 @app.route('/api/claim', methods=['POST'])
@@ -110,8 +107,13 @@ def claim_treasure():
     t_res = supabase.table('treasures').select('id, title').eq('lat', lat).eq('lng', lng).execute()
     if not t_res.data: return jsonify({"error": "Not found"}), 404
     
+    cache_title = t_res.data[0]['title']
     supabase.table('claims').insert({"username": username, "treasure_id": t_res.data[0]['id']}).execute()
-    add_log(username, f"found {t_res.data[0]['title']}")
+    add_log(username, f"found {cache_title}")
+    
+    # Broadcast to everyone that the cache was found!
+    broadcast_notification("Cache Discovered! 🗺️", f"{username} just found '{cache_title}'!")
+    
     return jsonify({"status": "success"}), 201
 
 @app.route('/api/leaderboard', methods=['GET'])
