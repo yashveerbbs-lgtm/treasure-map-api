@@ -76,10 +76,27 @@ def get_leaderboard():
 
 @app.route('/api/profile/<username>', methods=['GET'])
 def get_profile(username):
-    found = len(supabase.table('claims').select('id').eq('username', username).execute().data)
-    hidden = len(supabase.table('treasures').select('id').eq('creator', username).execute().data)
+    found_data = supabase.table('claims').select('id').eq('username', username).execute().data
+    hidden_data = supabase.table('treasures').select('id').eq('creator', username).execute().data
+    
+    found = len(found_data)
+    hidden = len(hidden_data)
     rank = "Master 👑" if (found + hidden*2) > 25 else "Novice 🌱"
-    return jsonify({"found": found, "hidden": hidden, "rank": rank}), 200
+    
+    # Calculate Dynamic Badges
+    badges = []
+    if found >= 1: badges.append("🧭 First Find")
+    if found >= 5: badges.append("🦊 Expert Tracker")
+    if hidden >= 1: badges.append("🗺️ Trailblazer")
+    if hidden >= 5: badges.append("🏛️ Local Legend")
+    if found == 0 and hidden == 0: badges.append("🥚 Fresh Spawn")
+
+    return jsonify({
+        "found": found, 
+        "hidden": hidden, 
+        "rank": rank,
+        "badges": badges
+    }), 200
 
 @app.route('/api/friends/<username>', methods=['GET'])
 def get_friends(username):
