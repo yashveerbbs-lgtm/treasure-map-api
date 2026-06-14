@@ -107,6 +107,34 @@
         </div>
     </div>
 
+    <div id="review-modal" class="modal-overlay">
+        <div class="modal-content glass">
+            <h3 style="margin-top:0;">Claim Treasure!</h3>
+            <label style="font-size: 13px; color: var(--accent-color);">How hard was it to find?</label>
+            <select id="review-difficulty">
+                <option value="1">⭐ 1 - Very Easy</option>
+                <option value="2">⭐⭐ 2 - Easy</option>
+                <option value="3" selected>⭐⭐⭐ 3 - Medium</option>
+                <option value="4">⭐⭐⭐⭐ 4 - Hard</option>
+                <option value="5">⭐⭐⭐⭐⭐ 5 - Extreme</option>
+            </select>
+            <textarea id="review-text" rows="3" placeholder="Write a review for the creator..."></textarea>
+            <button class="action-btn" onclick="submitClaimWithReview()">Submit & Claim</button>
+            <button class="action-btn close-btn" onclick="closeModal('review-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="manage-modal" class="modal-overlay">
+        <div class="modal-content glass">
+            <h3 style="margin-top:0;">Manage Your Cache</h3>
+            <label style="font-size: 13px; color: var(--accent-color);">Edit Description</label>
+            <textarea id="edit-cache-desc" rows="3"></textarea>
+            <button class="action-btn" style="margin-bottom: 10px;" onclick="editCache()">Save Changes</button>
+            <button class="action-btn" style="background: #ff416c; color: white;" onclick="deleteCache()">🗑️ Delete Cache completely</button>
+            <button class="action-btn close-btn" onclick="closeModal('manage-modal')">Cancel</button>
+        </div>
+    </div>
+
     <div id="feed-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h2 style="margin-top:0; text-align: center;">Activity</h2>
@@ -402,7 +430,17 @@
                                 playSFX();
                             }
                             if(statusBadge.className !== "status-badge burning") playSFX(); 
-                            statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; claimBtn.style.display = "block";
+                            statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; 
+                            
+                            // NEW: Switch button type if user is the creator
+                            if (closestTreasure.creator === myUsername) {
+                                claimBtn.innerText = "MANAGE CACHE";
+                                claimBtn.style.background = "linear-gradient(135deg, #ff9800, #f44336)"; // Orange/Red color
+                            } else {
+                                claimBtn.innerText = "LOG VISIT";
+                                claimBtn.style.background = ""; // Default green
+                            }
+                            claimBtn.style.display = "block";
                         } 
                         else {
                             statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
@@ -417,22 +455,37 @@
         // ACTION BUTTONS & MODALS
         // ==========================================
         document.getElementById('claim-button').addEventListener('click', () => {
-            if (!closestTreasure || !myUsername) return;
+            if (!closestTreasure) return;
             playSFX();
             
-            // NEW: Passing the exact database ID to Python
+            // NEW: Open specific modal depending on who clicked
+            if (closestTreasure.creator === myUsername) {
+                document.getElementById('edit-cache-desc').value = closestTreasure.description || '';
+                openModal('manage-modal');
+            } else {
+                document.getElementById('review-text').value = '';
+                document.getElementById('review-difficulty').value = '3';
+                openModal('review-modal');
+            }
+        });
+
+        // NEW: Submit Claim with Review/Rating
+        function submitClaimWithReview() {
+            const reviewText = document.getElementById('review-text').value;
+            const diffRating = document.getElementById('review-difficulty').value;
+
             fetch('/api/claim', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     username: myUsername, 
                     treasure_id: closestTreasure.id, 
-                    lat: closestTreasure.lat, 
-                    lng: closestTreasure.lng 
+                    review: reviewText,
+                    difficulty: diffRating
                 })
             }).then(res => res.json()).then(data => {
                 if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
                 
-                popupAlert('🎉 Treasure Found!', 'You earned +10 XP!', 'success');
+                popupAlert('🎉 Treasure Found!', 'Review saved. You earned +10 XP!', 'success');
                 map.removeLayer(closestTreasure.marker);
                 
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
@@ -441,9 +494,40 @@
                 
                 treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
                 document.getElementById('claim-button').style.display = "none"; 
+                closeModal('review-modal');
                 updateLeaderboard(); 
             });
-        });
+        }
+
+        // NEW: Edit Creator's Cache
+        function editCache() {
+            const newDesc = document.getElementById('edit-cache-desc').value;
+            fetch('/api/treasures/' + closestTreasure.id, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: myUsername, description: newDesc })
+            }).then(res => res.json()).then(data => {
+                if(data.error) { popupAlert('Error', data.error, 'error'); return; }
+                popupAlert('Saved!', 'Cache description updated.', 'success');
+                closeModal('manage-modal');
+                loadTreasures();
+            });
+        }
+
+        // NEW: Delete Creator's Cache
+        function deleteCache() {
+            if(!confirm("Are you sure you want to permanently delete this cache?")) return;
+            fetch('/api/treasures/' + closestTreasure.id, {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: myUsername })
+            }).then(res => res.json()).then(data => {
+                if(data.error) { popupAlert('Error', data.error, 'error'); return; }
+                popupAlert('Deleted', 'Your cache was removed from the map.', 'info');
+                map.removeLayer(closestTreasure.marker);
+                treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
+                document.getElementById('claim-button').style.display = "none"; 
+                closeModal('manage-modal');
+            });
+        }
 
         function submitCache() {
             const title = document.getElementById('cache-title').value;
