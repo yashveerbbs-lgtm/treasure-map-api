@@ -12,41 +12,18 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         /* === THEME VARIABLES === */
-        :root {
-            --bg-color: #000;
-            --glass-bg: rgba(26, 26, 46, 0.85);
-            --text-color: #fff;
-            --accent-color: #64ffda;
-            --input-bg: rgba(0,0,0,0.3);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --popup-bg: rgba(26, 26, 46, 0.95);
-            --modal-overlay: rgba(0,0,0,0.7);
-        }
-
-        body.light-mode {
-            --bg-color: #e0e5ec;
-            --glass-bg: rgba(255, 255, 255, 0.9);
-            --text-color: #1a1a2e;
-            --accent-color: #00b894;
-            --input-bg: rgba(0,0,0,0.05);
-            --border-color: rgba(0, 0, 0, 0.15);
-            --popup-bg: rgba(255, 255, 255, 0.95);
-            --modal-overlay: rgba(255,255,255,0.6);
-        }
-
+        :root { --bg-color: #000; --glass-bg: rgba(26, 26, 46, 0.85); --text-color: #fff; --accent-color: #64ffda; --input-bg: rgba(0,0,0,0.3); --border-color: rgba(255, 255, 255, 0.1); --popup-bg: rgba(26, 26, 46, 0.95); --modal-overlay: rgba(0,0,0,0.7); }
+        body.light-mode { --bg-color: #e0e5ec; --glass-bg: rgba(255, 255, 255, 0.9); --text-color: #1a1a2e; --accent-color: #00b894; --input-bg: rgba(0,0,0,0.05); --border-color: rgba(0, 0, 0, 0.15); --popup-bg: rgba(255, 255, 255, 0.95); --modal-overlay: rgba(255,255,255,0.6); }
+        
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); overflow: hidden; transition: background 0.3s; }
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        
-        /* Glassmorphism Defaults */
         .glass { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); color: var(--text-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: background 0.3s, color 0.3s; }
         
-        /* Login Overlay */
         #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg-color); }
         .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
         .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; background: var(--input-bg); color: var(--text-color); }
         .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); min-height: 48px; }
 
-        /* App Panels */
         #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; }
         .header-title { margin: 0 0 10px 0; font-size: 14px; color: var(--accent-color); text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
@@ -56,69 +33,51 @@
         .freezing { background: linear-gradient(135deg, #007bff, #00d2ff); color: white; }
         .warm { background: linear-gradient(135deg, #f2994a, #f2c94c); color: #000; }
         .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
-        
         #claim-button { display: none; margin-top: 15px; }
 
-        /* Floating Buttons */
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
-        /* Top Navigation Buttons */
         .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
         #profile-open-btn { right: 15px; }
-        #feed-btn { right: 115px; }
-        #theme-btn { right: 210px; }
+        #settings-btn { right: 75px; } /* New Settings Button */
+        #feed-btn { right: 135px; }
 
-        /* Modals */
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 80vh; overflow-y: auto;}
         .modal-content h2, .modal-content h3 { color: var(--accent-color); }
-        .modal-content input[type="text"], .modal-content textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
+        .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
         .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; }
         
-        /* Profile & Feed Specifics */
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
-        .friend-li { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
-        .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
-        .accept-btn { background: #00e676; color: #000; }
-        .reject-btn { background: #ff416c; color: #fff; }
-        .feed-item { margin-bottom:10px; border-bottom:1px solid var(--border-color); padding-bottom:10px; }
-
-        /* Custom Leaflet Popup Styling */
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
+        .setting-row input[type="checkbox"] { width: 20px; height: 20px; }
+        
         .leaflet-popup-content-wrapper { background: var(--popup-bg); color: var(--text-color); border-radius: 12px; border: 1px solid var(--accent-color);}
         .leaflet-popup-tip { background: var(--popup-bg); }
         .popup-img { width: 100%; border-radius: 8px; margin-top: 5px; max-height: 150px; object-fit: cover; }
         .popup-title { font-size: 16px; font-weight: bold; color: var(--accent-color); margin: 0; }
-        .popup-desc { font-size: 13px; margin-top: 5px; }
-
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
 
-        /* ==========================================
-           📱 MOBILE-FRIENDLY RESPONSIVE DESIGN
-           ========================================== */
         @media (max-width: 600px) {
             #top-panel { width: 130px; padding: 10px; top: 10px; left: 10px; max-height: 90px; }
             .header-title { font-size: 12px; margin-bottom: 5px; }
             #leaderboard-list { font-size: 11px; }
 
-            .top-btn { padding: 8px 12px; font-size: 12px; top: 10px; }
+            .top-btn { padding: 8px 12px; font-size: 12px; top: 10px; min-width: 44px; }
             #profile-open-btn { right: 10px; }
-            #feed-btn { right: 90px; }
-            #theme-btn { right: 165px; }
+            #settings-btn { right: 65px; }
+            #feed-btn { right: 120px; }
 
-            #bottom-panel { 
-                padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); 
-                bottom: 10px; left: 10px; right: 10px; 
-            }
+            #bottom-panel { padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); bottom: 10px; left: 10px; right: 10px; }
             .status-badge { font-size: 16px; width: 90%; }
-
             #add-btn { width: 65px; height: 65px; bottom: 130px; right: 15px; font-size: 35px; }
             .modal-content { width: 92%; padding: 20px; }
         }
     </style>
 </head>
 <body>
+    <audio id="bg-music" loop></audio>
 
     <div id="login-screen" class="glass">
         <div class="login-box glass">
@@ -130,13 +89,11 @@
 
     <div id="add-modal" class="modal-overlay">
         <div class="modal-content glass">
-            <h3 style="margin-top:0;">Hide a Cache Here</h3>
+            <h3 style="margin-top:0;">Hide a Cache</h3>
             <input type="text" id="cache-title" placeholder="Cache Title">
             <textarea id="cache-desc" rows="3" placeholder="Clues or description..."></textarea>
-            
             <label style="font-size: 13px; font-weight: bold; color: var(--accent-color);">Attach a Photo (Optional)</label>
-            <input type="file" id="cache-img" accept="image/*" capture="environment" style="background: var(--input-bg); color: var(--text-color); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); width: 100%; box-sizing: border-box; margin-bottom: 15px; margin-top: 5px;">
-            
+            <input type="file" id="cache-img" accept="image/*" capture="environment">
             <button class="action-btn" onclick="submitCache()">Hide it!</button>
             <button class="action-btn close-btn" onclick="closeModal('add-modal')">Cancel</button>
         </div>
@@ -144,42 +101,56 @@
 
     <div id="feed-modal" class="modal-overlay">
         <div class="modal-content glass">
-            <h2 style="margin-top:0; text-align: center;">Recent Activity</h2>
-            <div id="feed-list" style="font-size: 14px; color: var(--text-color); max-height: 40vh; overflow-y: auto; margin-bottom: 15px;">Loading news...</div>
+            <h2 style="margin-top:0; text-align: center;">Activity</h2>
+            <div id="feed-list" style="font-size: 14px; max-height: 40vh; overflow-y: auto;">Loading news...</div>
             <button class="action-btn close-btn" onclick="closeModal('feed-modal')">Close Feed</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content glass">
+            <h2 style="margin-top:0; text-align: center;">Settings</h2>
+            
+            <label style="font-size: 13px; color: var(--accent-color);">Map Theme</label>
+            <select id="set-map-theme" onchange="saveSettings()">
+                <option value="dark">Midnight (Dark)</option>
+                <option value="light">Daylight (Light)</option>
+                <option value="satellite">Satellite View</option>
+            </select>
+
+            <label style="font-size: 13px; color: var(--accent-color);">Background Music</label>
+            <select id="set-music" onchange="saveSettings()">
+                <option value="none">Muted</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Ambient Exploration</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3">Epic Adventure</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3">Retro Arcade</option>
+            </select>
+
+            <div class="setting-row"><span>Enable SFX & Vibration</span> <input type="checkbox" id="set-sfx" onchange="saveSettings()"></div>
+            <div class="setting-row"><span>Show Radar Ring (50m)</span> <input type="checkbox" id="set-radar" onchange="saveSettings()"></div>
+            <div class="setting-row"><span>Battery Saver (Low GPS)</span> <input type="checkbox" id="set-battery" onchange="saveSettings()"></div>
+            <div class="setting-row"><span>Imperial Units (Feet)</span> <input type="checkbox" id="set-units" onchange="saveSettings()"></div>
+            <div class="setting-row"><span>Ghost Mode (Hide Name)</span> <input type="checkbox" id="set-ghost" onchange="saveSettings()"></div>
+
+            <button class="action-btn close-btn" onclick="closeModal('settings-modal')" style="margin-top: 15px;">Save & Close</button>
         </div>
     </div>
 
     <div id="profile-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h2 id="profile-name" style="margin-top:0; text-align: center;">My Profile</h2>
-            
             <div class="profile-stat"><span>Rank:</span> <strong id="profile-rank">Loading...</strong></div>
-            <div class="profile-stat"><span>Caches Found:</span> <strong id="profile-found">0</strong></div>
-            <div class="profile-stat"><span>Caches Hidden:</span> <strong id="profile-hidden">0</strong></div>
-            
+            <div class="profile-stat"><span>Found:</span> <strong id="profile-found">0</strong></div>
+            <div class="profile-stat"><span>Hidden:</span> <strong id="profile-hidden">0</strong></div>
             <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
-            
-            <h3 style="margin-bottom: 5px;">Send Friend Request</h3>
-            <div style="display: flex; gap: 5px;">
-                <input type="text" id="friend-request-name" placeholder="Friend's Username" style="margin-bottom: 0;">
-                <button class="action-btn" style="width: auto; margin-top: 0;" onclick="sendFriendRequest()">Add</button>
-            </div>
-
-            <h3 style="margin-bottom: 5px; margin-top: 20px;">Pending Requests</h3>
-            <div id="pending-list" style="font-size: 14px;">No pending requests.</div>
-
-            <h3 style="margin-bottom: 5px; margin-top: 20px;">My Friends</h3>
-            <div id="friends-list" style="font-size: 14px;">No friends added yet.</div>
-
-            <button class="action-btn close-btn" style="margin-top: 25px;" onclick="closeModal('profile-modal')">Close Profile</button>
+            <button class="action-btn close-btn" onclick="closeModal('profile-modal')">Close Profile</button>
         </div>
     </div>
 
     <div id="map"></div>
-    <button id="theme-btn" class="top-btn" onclick="toggleTheme()">🌓 Theme</button>
-    <button id="feed-btn" class="top-btn" onclick="openFeed()">🔔 Feed</button>
-    <button id="profile-open-btn" class="top-btn" onclick="openProfile()">👤 Profile</button>
+    <button id="settings-btn" class="top-btn" onclick="openModal('settings-modal')">⚙️</button>
+    <button id="feed-btn" class="top-btn" onclick="openFeed()">🔔</button>
+    <button id="profile-open-btn" class="top-btn" onclick="openProfile()">👤</button>
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
 
     <div id="top-panel" class="glass">
@@ -196,54 +167,93 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // ==========================================
-        // THEME & INITIALIZATION
+        // VARIABLES & INITIALIZATION
         // ==========================================
         let myUsername = localStorage.getItem('geocatcher_username');
-        let currentTheme = localStorage.getItem('geocatcher_theme') || 'dark';
         let currentLat = 0; let currentLng = 0;
-        let mapTileLayer;
+        let mapTileLayer; let gpsWatcher;
+        let userMarker = null; let radarCircle = null;
+        let isFirstLock = true; let treasures = []; let closestTreasure = null; 
+
+        // Load Settings
+        let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
+            theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
+        };
 
         const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
         L.control.zoom({ position: 'topleft' }).addTo(map);
         
-        function applyTheme(theme) {
-            if (mapTileLayer) { map.removeLayer(mapTileLayer); }
-            
-            if (theme === 'light') {
+        // Settings Setup
+        function applySettings() {
+            // Map Theme
+            if (mapTileLayer) map.removeLayer(mapTileLayer);
+            if (appSettings.theme === 'light') {
                 document.body.classList.add('light-mode');
                 mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            } else if (appSettings.theme === 'satellite') {
+                document.body.classList.remove('light-mode');
+                mapTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
             } else {
                 document.body.classList.remove('light-mode');
                 mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
-            localStorage.setItem('geocatcher_theme', theme);
-            currentTheme = theme;
+
+            // Audio
+            const audioEl = document.getElementById('bg-music');
+            if (appSettings.music === 'none') { audioEl.pause(); audioEl.src = ""; } 
+            else if (audioEl.src !== appSettings.music) { audioEl.src = appSettings.music; audioEl.play().catch(e => console.log("Waiting for user tap to play audio")); }
+
+            // Update UI Toggles
+            document.getElementById('set-map-theme').value = appSettings.theme;
+            document.getElementById('set-music').value = appSettings.music;
+            document.getElementById('set-sfx').checked = appSettings.sfx;
+            document.getElementById('set-radar').checked = appSettings.radar;
+            document.getElementById('set-battery').checked = appSettings.battery;
+            document.getElementById('set-units').checked = appSettings.units;
+            document.getElementById('set-ghost').checked = appSettings.ghost;
+
+            // Radar Ring Toggle
+            if (!appSettings.radar && radarCircle) { map.removeLayer(radarCircle); radarCircle = null; }
+
+            // Restart GPS if battery setting changed
+            startGPS();
+            updateLeaderboard(); // Refresh to apply ghost mode
         }
 
-        function toggleTheme() {
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            applyTheme(newTheme);
+        function saveSettings() {
+            appSettings.theme = document.getElementById('set-map-theme').value;
+            appSettings.music = document.getElementById('set-music').value;
+            appSettings.sfx = document.getElementById('set-sfx').checked;
+            appSettings.radar = document.getElementById('set-radar').checked;
+            appSettings.battery = document.getElementById('set-battery').checked;
+            appSettings.units = document.getElementById('set-units').checked;
+            appSettings.ghost = document.getElementById('set-ghost').checked;
+            
+            localStorage.setItem('geocatcher_settings', JSON.stringify(appSettings));
+            applySettings();
         }
 
-        applyTheme(currentTheme);
+        // Play SFX Helper
+        function playSFX() {
+            if (appSettings.sfx && navigator.vibrate) navigator.vibrate(50);
+        }
+
+        applySettings();
 
         if (myUsername) { document.getElementById('login-screen').style.display = 'none'; }
-
         function login() {
             const name = document.getElementById('username-input').value.trim();
             if (name) {
                 localStorage.setItem('geocatcher_username', name);
                 myUsername = name;
                 document.getElementById('login-screen').style.display = 'none';
+                applySettings(); // Tries to start music after first tap!
             } else { alert("Please enter a name!"); }
         }
 
         // ==========================================
-        // CACHE & RADAR LOGIC
+        // DATA & GPS LOGIC
         // ==========================================
-        let userMarker = null; let isFirstLock = true;
-        let treasures = []; let closestTreasure = null; 
-
         function loadTreasures() {
             fetch('/api/treasures').then(res => res.json()).then(data => {
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
@@ -265,8 +275,11 @@
                 const list = document.getElementById('leaderboard-list');
                 list.innerHTML = '';
                 data.forEach(entry => {
+                    // Hide user if they have Ghost Mode on
+                    if (appSettings.ghost && entry.username === myUsername) return;
+                    
                     const li = document.createElement('li');
-                    li.innerHTML = `<strong>${entry.username}</strong>: ${entry.count}`;
+                    li.innerHTML = `<strong style="color:var(--text-color);">${entry.username}</strong>: ${entry.count}`;
                     list.appendChild(li);
                 });
             });
@@ -274,54 +287,79 @@
         
         loadTreasures(); updateLeaderboard();
 
-        if (navigator.geolocation) {
-            navigator.geolocation.watchPosition((position) => {
-                currentLat = position.coords.latitude; currentLng = position.coords.longitude;
+        function startGPS() {
+            if (navigator.geolocation) {
+                if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
+                
+                const gpsOptions = {
+                    enableHighAccuracy: !appSettings.battery, // Turns off high drain if battery saver is ON
+                    maximumAge: appSettings.battery ? 10000 : 0,
+                    timeout: 10000
+                };
 
-                if (!userMarker) {
-                    userMarker = L.circleMarker([currentLat, currentLng], { color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 10, weight: 3 }).addTo(map);
-                } else { userMarker.setLatLng([currentLat, currentLng]); }
-                userMarker.bringToFront();
-                if (isFirstLock) { map.setView([currentLat, currentLng], 17); isFirstLock = false; }
+                gpsWatcher = navigator.geolocation.watchPosition((position) => {
+                    currentLat = position.coords.latitude; currentLng = position.coords.longitude;
 
-                if (treasures.length > 0) {
-                    let shortestDistance = Infinity; let currentClosest = null;
-                    treasures.forEach(t => {
-                        let dist = map.distance([currentLat, currentLng], [t.lat, t.lng]);
-                        if (dist < shortestDistance) { shortestDistance = dist; currentClosest = t; }
-                    });
+                    if (!userMarker) {
+                        userMarker = L.circleMarker([currentLat, currentLng], { color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 8, weight: 3 }).addTo(map);
+                    } else { userMarker.setLatLng([currentLat, currentLng]); }
+                    userMarker.bringToFront();
 
-                    closestTreasure = currentClosest;
-                    const distanceMeters = Math.round(shortestDistance);
-                    document.getElementById('radar-distance').innerText = `Nearest cache is ${distanceMeters} meters away`;
-
-                    const statusBadge = document.getElementById('radar-status');
-                    const claimBtn = document.getElementById('claim-button');
-
-                    if (distanceMeters <= 20) {
-                        statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; claimBtn.style.display = "block";
-                    } else if (distanceMeters <= 100) {
-                        statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
-                    } else {
-                        statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
+                    // Radar Ring
+                    if (appSettings.radar) {
+                        if (!radarCircle) radarCircle = L.circle([currentLat, currentLng], { radius: 50, color: 'rgba(100, 255, 218, 0.4)', fillOpacity: 0.1, weight: 1, dashArray: '5, 5' }).addTo(map);
+                        else radarCircle.setLatLng([currentLat, currentLng]);
                     }
-                }
-            }, 
-            (error) => { console.log("GPS Error: ", error); }, 
-            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }); 
+
+                    if (isFirstLock) { map.setView([currentLat, currentLng], 17); isFirstLock = false; }
+
+                    if (treasures.length > 0) {
+                        let shortestDistance = Infinity; let currentClosest = null;
+                        treasures.forEach(t => {
+                            let dist = map.distance([currentLat, currentLng], [t.lat, t.lng]);
+                            if (dist < shortestDistance) { shortestDistance = dist; currentClosest = t; }
+                        });
+
+                        closestTreasure = currentClosest;
+                        const distanceMeters = Math.round(shortestDistance);
+                        
+                        // Handle Unit conversion
+                        let displayDist = distanceMeters;
+                        let unitText = "meters";
+                        if (appSettings.units) { displayDist = Math.round(distanceMeters * 3.28084); unitText = "feet"; }
+
+                        document.getElementById('radar-distance').innerText = `Nearest cache is ${displayDist} ${unitText} away`;
+
+                        const statusBadge = document.getElementById('radar-status');
+                        const claimBtn = document.getElementById('claim-button');
+
+                        if (distanceMeters <= 20) {
+                            if(statusBadge.className !== "status-badge burning") playSFX(); // Ping when hot
+                            statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; claimBtn.style.display = "block";
+                        } else if (distanceMeters <= 100) {
+                            statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
+                        } else {
+                            statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
+                        }
+                    }
+                }, 
+                (error) => { console.log("GPS Error: ", error); }, 
+                gpsOptions); 
+            }
         }
 
+        // ==========================================
+        // ACTION BUTTONS
+        // ==========================================
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure || !myUsername) return;
+            playSFX();
             fetch('/api/claim', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
             }).then(res => res.json()).then(data => {
-                if (data.error) { alert("Uh oh! Database Error: " + data.error); return; }
+                if (data.error) { alert("Database Error: " + data.error); return; }
                 
-                // Vibrate if on mobile!
-                if (navigator.vibrate) navigator.vibrate(100);
-
                 alert("🎉 Treasure Logged Successfully!");
                 map.removeLayer(closestTreasure.marker);
                 
@@ -339,50 +377,31 @@
             const title = document.getElementById('cache-title').value;
             const desc = document.getElementById('cache-desc').value;
             const imgInput = document.getElementById('cache-img');
-            
             if (!title) { alert("Please give it a title!"); return; }
+            playSFX();
 
             const formData = new FormData();
-            formData.append('lat', currentLat);
-            formData.append('lng', currentLng);
-            formData.append('title', title);
-            formData.append('description', desc);
+            formData.append('lat', currentLat); formData.append('lng', currentLng);
+            formData.append('title', title); formData.append('description', desc);
             formData.append('creator', myUsername);
             if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
 
             fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
                 if(data.error) { alert("Error saving: " + data.error); return; }
-                
-                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-
                 alert("Location Hidden Successfully!");
                 closeModal('add-modal');
-                document.getElementById('cache-title').value = ''; 
-                document.getElementById('cache-desc').value = ''; 
-                document.getElementById('cache-img').value = '';
+                document.getElementById('cache-title').value = ''; document.getElementById('cache-desc').value = ''; document.getElementById('cache-img').value = '';
                 loadTreasures(); 
             });
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; playSFX(); }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; playSFX(); }
 
-        // ==========================================
-        // PROFILE, FRIENDS & FEED LOGIC
-        // ==========================================
         function openFeed() {
             openModal('feed-modal');
             fetch('/api/logs').then(r => r.json()).then(data => {
-                const feedList = document.getElementById('feed-list');
-                if (data.length === 0) {
-                    feedList.innerHTML = "No recent activity yet.";
-                    return;
-                }
-                feedList.innerHTML = data.map(log => `
-                    <div class="feed-item">
-                        <strong style="color: var(--accent-color);">${log.username}</strong> ${log.activity}
-                    </div>
-                `).join('');
+                document.getElementById('feed-list').innerHTML = data.length === 0 ? "No recent activity yet." : data.map(log => `<div style="margin-bottom:10px; border-bottom:1px solid var(--border-color); padding-bottom:5px;"><strong style="color: var(--accent-color);">${log.username}</strong> ${log.activity}</div>`).join('');
             });
         }
 
@@ -390,55 +409,11 @@
             if(!myUsername) return;
             document.getElementById('profile-name').innerText = myUsername + "'s Profile";
             openModal('profile-modal');
-            
             fetch('/api/profile/' + myUsername).then(r => r.json()).then(data => {
                 document.getElementById('profile-rank').innerText = data.rank || 'Unknown';
                 document.getElementById('profile-found').innerText = data.found || 0;
                 document.getElementById('profile-hidden').innerText = data.hidden || 0;
             });
-            loadFriends();
-        }
-
-        function loadFriends() {
-            fetch('/api/friends/' + myUsername).then(r => r.json()).then(data => {
-                const fList = document.getElementById('friends-list');
-                const pList = document.getElementById('pending-list');
-                
-                if(data.friends && data.friends.length > 0) {
-                    fList.innerHTML = data.friends.map(f => `<div class="friend-li"><span>🤝 ${f}</span></div>`).join('');
-                } else { fList.innerHTML = "No friends added yet."; }
-
-                if(data.pending && data.pending.length > 0) {
-                    pList.innerHTML = data.pending.map(p => `
-                        <div class="friend-li">
-                            <span>📨 ${p}</span>
-                            <div>
-                                <button class="small-btn accept-btn" onclick="respondFriend('${p}', 'accept')">✓</button>
-                                <button class="small-btn reject-btn" onclick="respondFriend('${p}', 'reject')">✗</button>
-                            </div>
-                        </div>
-                    `).join('');
-                } else { pList.innerHTML = "No pending requests."; }
-            });
-        }
-
-        function sendFriendRequest() {
-            const friendName = document.getElementById('friend-request-name').value.trim();
-            if(!friendName) return;
-            fetch('/api/friend/request', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requester: myUsername, receiver: friendName })
-            }).then(r => r.json()).then(data => {
-                if(data.error) alert(data.error);
-                else { alert("Request sent to " + friendName + "!"); document.getElementById('friend-request-name').value = ''; }
-            });
-        }
-
-        function respondFriend(requesterName, action) {
-            fetch('/api/friend/respond', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requester: requesterName, receiver: myUsername, action: action })
-            }).then(() => loadFriends());
         }
     </script>
 </body>
