@@ -102,9 +102,18 @@ def handle_treasures():
 @app.route('/api/claim', methods=['POST'])
 def claim_treasure():
     data = request.json
-    username, lat, lng = data.get('username'), data.get('lat'), data.get('lng')
-    t_res = supabase.table('treasures').select('id, title').eq('lat', lat).eq('lng', lng).execute()
-    if not t_res.data: return jsonify({"error": "Not found"}), 404
+    username = data.get('username')
+    treasure_id = data.get('treasure_id')
+    lat = data.get('lat') # Kept as a fallback
+    lng = data.get('lng')
+    
+    # Look up by the exact database ID instead of decimal coordinates
+    if treasure_id:
+        t_res = supabase.table('treasures').select('id, title').eq('id', treasure_id).execute()
+    else:
+        t_res = supabase.table('treasures').select('id, title').eq('lat', lat).eq('lng', lng).execute()
+        
+    if not t_res.data: return jsonify({"error": "Not found in database"}), 404
     
     cache_title = t_res.data[0]['title']
     supabase.table('claims').insert({"username": username, "treasure_id": t_res.data[0]['id']}).execute()
@@ -115,7 +124,6 @@ def claim_treasure():
 
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
-    # NEW: Advanced RPG Scoring System
     claims_res = supabase.table('claims').select('username').execute()
     hides_res = supabase.table('treasures').select('creator').execute()
     
@@ -132,7 +140,6 @@ def get_leaderboard():
 
     leaderboard = []
     for u, data in stats.items():
-        # 10 XP per find, 20 XP per hide
         score = (data['found'] * 10) + (data['hidden'] * 20)
         leaderboard.append({"username": u, "found": data['found'], "hidden": data['hidden'], "score": score})
 
