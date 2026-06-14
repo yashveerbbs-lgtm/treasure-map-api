@@ -204,7 +204,6 @@
         const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
         L.control.zoom({ position: 'topleft' }).addTo(map);
         
-        // Settings Setup
         function applySettings() {
             if (mapTileLayer) map.removeLayer(mapTileLayer);
             if (appSettings.theme === 'light') {
@@ -452,7 +451,7 @@
         }
 
         // ==========================================
-        // PUSH NOTIFICATIONS
+        // PUSH NOTIFICATIONS & REAL-TIME SYNC
         // ==========================================
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -497,6 +496,16 @@
                 console.error("Push setup failed", err);
                 alert("Failed to setup notifications. Ensure you are on HTTPS.");
             }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.action === 'RELOAD_MAP') {
+                    console.log("Background update received! Syncing map...");
+                    loadTreasures(); 
+                    updateLeaderboard();
+                }
+            });
         }
     </script>
 </body>
