@@ -39,7 +39,6 @@
 
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
-        /* NEW: Self-Centering Map Button */
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
 
         .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
@@ -273,7 +272,7 @@
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
         let alertedCaches = new Set(); 
         
-        let selectedManageCache = null; // NEW: Tracks which cache is currently being edited/deleted
+        let selectedManageCache = null; 
 
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
@@ -347,7 +346,8 @@
         // DATA & GPS LOGIC
         // ==========================================
         function loadTreasures() {
-            fetch('/api/treasures').then(res => res.json()).then(data => {
+            // FIX: Prevent browser from using old cached data
+            fetch('/api/treasures', { cache: 'no-store' }).then(res => res.json()).then(data => {
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
                 treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
                 treasures = data.filter(t => !claimedCaches.includes(t.lat + ',' + t.lng));
@@ -363,7 +363,8 @@
         }
         
         function updateLeaderboard() {
-            fetch('/api/leaderboard').then(res => res.json()).then(data => {
+            // FIX: Prevent browser from showing old cached scores
+            fetch('/api/leaderboard', { cache: 'no-store' }).then(res => res.json()).then(data => {
                 const miniList = document.getElementById('leaderboard-list');
                 const fullList = document.getElementById('full-leaderboard-list');
                 miniList.innerHTML = ''; fullList.innerHTML = '';
@@ -394,7 +395,6 @@
         
         loadTreasures(); updateLeaderboard();
 
-        // NEW: Snap Map Function
         function centerMap() {
             if (currentLat !== 0 && currentLng !== 0) {
                 map.setView([currentLat, currentLng], 17);
@@ -461,7 +461,6 @@
                             if(statusBadge.className !== "status-badge burning") playSFX(); 
                             statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; 
                             
-                            // Switch button appearance depending on creator
                             if (closestTreasure.creator === myUsername) {
                                 claimBtn.innerText = "MANAGE CACHE";
                                 claimBtn.style.background = "linear-gradient(135deg, #ff9800, #f44336)";
@@ -488,7 +487,7 @@
             playSFX();
             
             if (closestTreasure.creator === myUsername) {
-                selectedManageCache = closestTreasure; // Locks target
+                selectedManageCache = closestTreasure; 
                 document.getElementById('edit-cache-desc').value = closestTreasure.description || '';
                 openModal('manage-modal');
             } else {
@@ -498,7 +497,6 @@
             }
         });
 
-        // NEW: Load the Global "My Hides" Menu
         function openMyHides() {
             closeModal('profile-modal');
             const listDiv = document.getElementById('my-hides-list');
@@ -520,7 +518,6 @@
             openModal('my-hides-modal');
         }
 
-        // NEW: Select a specific cache from the global menu
         function manageSpecificCache(id) {
             selectedManageCache = treasures.find(t => t.id === id);
             if(selectedManageCache) {
@@ -530,7 +527,6 @@
             }
         }
 
-        // UPDATE: Send claim to server
         function submitClaimWithReview() {
             const reviewText = document.getElementById('review-text').value;
             const diffRating = document.getElementById('review-difficulty').value;
@@ -560,7 +556,6 @@
             });
         }
 
-        // UPDATE: Send Edit Cache changes to server
         function editCache() {
             if (!selectedManageCache) return;
             const newDesc = document.getElementById('edit-cache-desc').value;
@@ -575,7 +570,6 @@
             });
         }
 
-        // UPDATE: Send Delete Cache command to server
         function deleteCache() {
             if (!selectedManageCache) return;
             if(!confirm("Are you sure you want to permanently delete this cache?")) return;
@@ -586,11 +580,9 @@
                 if(data.error) { popupAlert('Error', data.error, 'error'); return; }
                 popupAlert('Deleted', 'Your cache was removed from the map.', 'info');
                 
-                // Instantly remove it from the map view
                 if(selectedManageCache.marker) map.removeLayer(selectedManageCache.marker);
                 treasures = treasures.filter(t => t.id !== selectedManageCache.id); 
                 
-                // If they deleted the one they are currently standing on, hide the button
                 if(closestTreasure && closestTreasure.id === selectedManageCache.id) {
                     closestTreasure = null;
                     document.getElementById('claim-button').style.display = "none"; 
