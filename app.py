@@ -3,7 +3,6 @@ import uuid
 import json
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from supabase import create_client, Client
-from collections import Counter
 from pywebpush import webpush, WebPushException
 
 app = Flask(__name__)
@@ -111,16 +110,34 @@ def claim_treasure():
     supabase.table('claims').insert({"username": username, "treasure_id": t_res.data[0]['id']}).execute()
     add_log(username, f"found {cache_title}")
     
-    # Broadcast to everyone that the cache was found!
     broadcast_notification("Cache Discovered! 🗺️", f"{username} just found '{cache_title}'!")
-    
     return jsonify({"status": "success"}), 201
 
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
-    res = supabase.table('claims').select('username').execute()
-    counts = Counter([item['username'] for item in res.data])
-    return jsonify([{"username": name, "count": count} for name, count in counts.most_common()]), 200
+    # NEW: Advanced RPG Scoring System
+    claims_res = supabase.table('claims').select('username').execute()
+    hides_res = supabase.table('treasures').select('creator').execute()
+    
+    stats = {}
+    for item in claims_res.data:
+        u = item['username']
+        stats[u] = stats.get(u, {'found': 0, 'hidden': 0})
+        stats[u]['found'] += 1
+        
+    for item in hides_res.data:
+        u = item['creator']
+        stats[u] = stats.get(u, {'found': 0, 'hidden': 0})
+        stats[u]['hidden'] += 1
+
+    leaderboard = []
+    for u, data in stats.items():
+        # 10 XP per find, 20 XP per hide
+        score = (data['found'] * 10) + (data['hidden'] * 20)
+        leaderboard.append({"username": u, "found": data['found'], "hidden": data['hidden'], "score": score})
+
+    leaderboard.sort(key=lambda x: x['score'], reverse=True)
+    return jsonify(leaderboard), 200
 
 @app.route('/api/profile/<username>', methods=['GET'])
 def get_profile(username):
