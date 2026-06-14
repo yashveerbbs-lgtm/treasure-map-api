@@ -44,7 +44,7 @@
         #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg-color); }
         .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
         .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; background: var(--input-bg); color: var(--text-color); }
-        .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); }
+        .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); min-height: 48px; }
 
         /* App Panels */
         #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; }
@@ -63,9 +63,10 @@
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
         /* Top Navigation Buttons */
-        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); }
+        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
         #profile-open-btn { right: 15px; }
-        #theme-btn { right: 120px; } 
+        #feed-btn { right: 115px; }
+        #theme-btn { right: 210px; }
 
         /* Modals */
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
@@ -74,12 +75,13 @@
         .modal-content input[type="text"], .modal-content textarea { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
         .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; }
         
-        /* Profile Specifics */
+        /* Profile & Feed Specifics */
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
         .friend-li { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
         .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .accept-btn { background: #00e676; color: #000; }
         .reject-btn { background: #ff416c; color: #fff; }
+        .feed-item { margin-bottom:10px; border-bottom:1px solid var(--border-color); padding-bottom:10px; }
 
         /* Custom Leaflet Popup Styling */
         .leaflet-popup-content-wrapper { background: var(--popup-bg); color: var(--text-color); border-radius: 12px; border: 1px solid var(--accent-color);}
@@ -102,7 +104,8 @@
 
             .top-btn { padding: 8px 12px; font-size: 12px; top: 10px; }
             #profile-open-btn { right: 10px; }
-            #theme-btn { right: 95px; }
+            #feed-btn { right: 90px; }
+            #theme-btn { right: 165px; }
 
             #bottom-panel { 
                 padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); 
@@ -139,6 +142,14 @@
         </div>
     </div>
 
+    <div id="feed-modal" class="modal-overlay">
+        <div class="modal-content glass">
+            <h2 style="margin-top:0; text-align: center;">Recent Activity</h2>
+            <div id="feed-list" style="font-size: 14px; color: var(--text-color); max-height: 40vh; overflow-y: auto; margin-bottom: 15px;">Loading news...</div>
+            <button class="action-btn close-btn" onclick="closeModal('feed-modal')">Close Feed</button>
+        </div>
+    </div>
+
     <div id="profile-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h2 id="profile-name" style="margin-top:0; text-align: center;">My Profile</h2>
@@ -167,6 +178,7 @@
 
     <div id="map"></div>
     <button id="theme-btn" class="top-btn" onclick="toggleTheme()">🌓 Theme</button>
+    <button id="feed-btn" class="top-btn" onclick="openFeed()">🔔 Feed</button>
     <button id="profile-open-btn" class="top-btn" onclick="openProfile()">👤 Profile</button>
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
 
@@ -306,6 +318,10 @@
                 body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
             }).then(res => res.json()).then(data => {
                 if (data.error) { alert("Uh oh! Database Error: " + data.error); return; }
+                
+                // Vibrate if on mobile!
+                if (navigator.vibrate) navigator.vibrate(100);
+
                 alert("🎉 Treasure Logged Successfully!");
                 map.removeLayer(closestTreasure.marker);
                 
@@ -336,6 +352,9 @@
 
             fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
                 if(data.error) { alert("Error saving: " + data.error); return; }
+                
+                if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+
                 alert("Location Hidden Successfully!");
                 closeModal('add-modal');
                 document.getElementById('cache-title').value = ''; 
@@ -349,8 +368,24 @@
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         // ==========================================
-        // PROFILE & FRIENDS LOGIC
+        // PROFILE, FRIENDS & FEED LOGIC
         // ==========================================
+        function openFeed() {
+            openModal('feed-modal');
+            fetch('/api/logs').then(r => r.json()).then(data => {
+                const feedList = document.getElementById('feed-list');
+                if (data.length === 0) {
+                    feedList.innerHTML = "No recent activity yet.";
+                    return;
+                }
+                feedList.innerHTML = data.map(log => `
+                    <div class="feed-item">
+                        <strong style="color: var(--accent-color);">${log.username}</strong> ${log.activity}
+                    </div>
+                `).join('');
+            });
+        }
+
         function openProfile() {
             if(!myUsername) return;
             document.getElementById('profile-name').innerText = myUsername + "'s Profile";
