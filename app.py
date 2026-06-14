@@ -99,25 +99,52 @@ def handle_treasures():
         broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
         return jsonify({"message": "Success"}), 200
 
+# NEW: Edit or Delete a Cache
+@app.route('/api/treasures/<int:t_id>', methods=['PUT', 'DELETE'])
+def manage_treasure(t_id):
+    username = request.json.get('username')
+    
+    # Verify the cache belongs to the user
+    t_res = supabase.table('treasures').select('creator, title').eq('id', t_id).execute()
+    if not t_res.data or t_res.data[0]['creator'] != username:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    if request.method == 'DELETE':
+        supabase.table('treasures').delete().eq('id', t_id).execute()
+        add_log(username, f"removed their cache: {t_res.data[0]['title']}")
+        return jsonify({"status": "deleted"}), 200
+        
+    elif request.method == 'PUT':
+        new_desc = request.json.get('description')
+        supabase.table('treasures').update({"description": new_desc}).eq('id', t_id).execute()
+        return jsonify({"status": "updated"}), 200
+
 @app.route('/api/claim', methods=['POST'])
 def claim_treasure():
     data = request.json
     username = data.get('username')
     treasure_id = data.get('treasure_id')
-    lat = data.get('lat') # Kept as a fallback
-    lng = data.get('lng')
+    review = data.get('review', '')
+    difficulty = int(data.get('difficulty', 1))
     
-    # Look up by the exact database ID instead of decimal coordinates
-    if treasure_id:
-        t_res = supabase.table('treasures').select('id, title').eq('id', treasure_id).execute()
-    else:
-        t_res = supabase.table('treasures').select('id, title').eq('lat', lat).eq('lng', lng).execute()
-        
+    t_res = supabase.table('treasures').select('id, title, creator').eq('id', treasure_id).execute()
     if not t_res.data: return jsonify({"error": "Not found in database"}), 404
     
+    # NEW: Block creator from claiming their own cache
+    if t_res.data[0]['creator'] == username:
+        return jsonify({"error": "You cannot claim your own cache!"}), 403
+    
     cache_title = t_res.data[0]['title']
-    supabase.table('claims').insert({"username": username, "treasure_id": t_res.data[0]['id']}).execute()
-    add_log(username, f"found {cache_title}")
+    
+    # NEW: Insert review and difficulty into claims table
+    supabase.table('claims').insert({
+        "username": username, 
+        "treasure_id": t_res.data[0]['id'],
+        "review": review,
+        "difficulty": difficulty
+    }).execute()
+    
+    add_log(username, f"found {cache_title} and rated it {difficulty} Stars!")
     
     broadcast_notification("Cache Discovered! 🗺️", f"{username} just found '{cache_title}'!")
     return jsonify({"status": "success"}), 201
