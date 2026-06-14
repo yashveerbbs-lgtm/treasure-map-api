@@ -10,6 +10,13 @@ self.addEventListener('push', function(event) {
     };
     
     event.waitUntil(self.registration.showNotification(title, options));
+
+    // NEW: Tell any open Geocatcher tabs to refresh their map data!
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+        clients.forEach(client => {
+            client.postMessage({ action: 'RELOAD_MAP' });
+        });
+    });
 });
 
 self.addEventListener('notificationclick', function(event) {
