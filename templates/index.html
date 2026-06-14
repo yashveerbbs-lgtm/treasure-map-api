@@ -208,7 +208,6 @@
             Swal.fire({ title, text, icon, background: 'var(--glass-bg)', color: 'var(--text-color)', confirmButtonColor: 'var(--accent-color)', backdrop: 'rgba(0,0,0,0.6)' });
         };
 
-        // NEW: SweetAlert Toast logic for Proximity Alerts
         const Toast = Swal.mixin({
             toast: true, position: 'top-end', showConfirmButton: false, timer: 4000,
             timerProgressBar: true, background: 'var(--glass-bg)', color: 'var(--text-color)'
@@ -227,7 +226,7 @@
         let mapTileLayer; let gpsWatcher;
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
-        let alertedCaches = new Set(); // NEW: Prevents spamming proximity notifications
+        let alertedCaches = new Set(); 
 
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
@@ -325,7 +324,6 @@
                 data.forEach((entry, index) => {
                     let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔹';
                     
-                    // Render Mini List (Top 3 only)
                     if (index < 3) {
                         if (!(appSettings.ghost && entry.username === myUsername)) {
                             const li = document.createElement('li');
@@ -334,7 +332,6 @@
                         }
                     }
 
-                    // Render Full Modal List
                     if (!(appSettings.ghost && entry.username === myUsername)) {
                         const row = document.createElement('div');
                         row.className = "rank-row";
@@ -390,7 +387,6 @@
                         const claimBtn = document.getElementById('claim-button');
                         const cacheKey = closestTreasure.lat + ',' + closestTreasure.lng;
 
-                        // NEW: Proximity Auto-Alert Logic
                         if (distanceMeters <= 50 && distanceMeters > 20) {
                             if (!alertedCaches.has('warm_' + cacheKey)) {
                                 Toast.fire({ icon: 'info', title: `Proximity Alert!`, text: `A cache is less than 50m away...` });
@@ -423,17 +419,26 @@
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure || !myUsername) return;
             playSFX();
+            
+            // NEW: Passing the exact database ID to Python
             fetch('/api/claim', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
+                body: JSON.stringify({ 
+                    username: myUsername, 
+                    treasure_id: closestTreasure.id, 
+                    lat: closestTreasure.lat, 
+                    lng: closestTreasure.lng 
+                })
             }).then(res => res.json()).then(data => {
                 if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
                 
                 popupAlert('🎉 Treasure Found!', 'You earned +10 XP!', 'success');
                 map.removeLayer(closestTreasure.marker);
+                
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
                 claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
                 localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
+                
                 treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
                 document.getElementById('claim-button').style.display = "none"; 
                 updateLeaderboard(); 
