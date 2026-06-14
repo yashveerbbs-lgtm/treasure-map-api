@@ -136,6 +136,7 @@
             <div class="setting-row"><span>Imperial Units (Feet)</span> <input type="checkbox" id="set-units" onchange="saveSettings()"></div>
             <div class="setting-row"><span>Ghost Mode (Hide Name)</span> <input type="checkbox" id="set-ghost" onchange="saveSettings()"></div>
 
+            <button class="action-btn" style="background: linear-gradient(135deg, #007bff, #00d2ff); color: white;" onclick="setupPushNotifications()">🔔 Enable Push Alerts</button>
             <button class="action-btn close-btn" onclick="closeModal('settings-modal')" style="margin-top: 15px;">Save & Close</button>
         </div>
     </div>
@@ -196,7 +197,6 @@
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
 
-        // Load Settings
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
         };
@@ -417,7 +417,6 @@
                 document.getElementById('profile-found').innerText = data.found || 0;
                 document.getElementById('profile-hidden').innerText = data.hidden || 0;
                 
-                // Render Dynamic Badges
                 const badgeContainer = document.getElementById('profile-badges');
                 if (data.badges && data.badges.length > 0) {
                     badgeContainer.innerHTML = data.badges.map(b => `<span style="background:var(--accent-color); color:#000; padding:5px 10px; border-radius:15px; font-size:12px; font-weight:bold;">${b}</span>`).join('');
@@ -450,6 +449,54 @@
         function respondFriend(requesterName, action) {
             fetch('/api/friend/respond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requester: requesterName, receiver: myUsername, action: action }) })
             .then(() => loadFriends());
+        }
+
+        // ==========================================
+        // PUSH NOTIFICATIONS
+        // ==========================================
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) { outputArray[i] = rawData.charCodeAt(i); }
+            return outputArray;
+        }
+
+        async function setupPushNotifications() {
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                alert("Push notifications are not supported on this browser.");
+                return;
+            }
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission !== 'granted') {
+                    alert("Permission denied. Enable them in your device settings!");
+                    return;
+                }
+
+                const register = await navigator.serviceWorker.register('/sw.js');
+                
+                const res = await fetch('/api/vapid_public_key');
+                const data = await res.json();
+                const publicKey = urlBase64ToUint8Array(data.public_key);
+
+                const subscription = await register.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: publicKey
+                });
+
+                await fetch('/api/subscribe', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: myUsername, sub_info: subscription })
+                });
+                
+                alert("Alerts Enabled! You will be notified when someone hides a cache.");
+            } catch(err) {
+                console.error("Push setup failed", err);
+                alert("Failed to setup notifications. Ensure you are on HTTPS.");
+            }
         }
     </script>
 </body>
