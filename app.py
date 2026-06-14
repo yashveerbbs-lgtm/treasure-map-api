@@ -1,8 +1,10 @@
 ﻿import os
 import uuid
-from flask import Flask, render_template, request, jsonify
+import json
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from supabase import create_client, Client
 from collections import Counter
+from pywebpush import webpush, WebPushException
 
 app = Flask(__name__)
 
@@ -10,9 +12,18 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# Load VAPID Keys from Render Environment
+VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY")
+VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY")
+VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL")
+
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/sw.js')
+def serve_sw():
+    return send_from_directory('.', 'sw.js', mimetype='application/javascript')
 
 @app.route('/manifest.json')
 def manifest():
@@ -26,6 +37,38 @@ def manifest():
 def add_log(username, activity):
     supabase.table('logs').insert({"username": username, "activity": activity}).execute()
 
+# --- Push Notification Routes ---
+@app.route('/api/vapid_public_key', methods=['GET'])
+def vapid_key():
+    return jsonify({"public_key": VAPID_PUBLIC_KEY}), 200
+
+@app.route('/api/subscribe', methods=['POST'])
+def subscribe():
+    data = request.json
+    username = data.get('username')
+    sub_info = data.get('sub_info')
+    
+    # Remove old subscriptions for this user, then insert the new one
+    supabase.table('subscriptions').delete().eq('username', username).execute()
+    supabase.table('subscriptions').insert({"username": username, "sub_info": sub_info}).execute()
+    return jsonify({"status": "success"}), 200
+
+def broadcast_notification(title, body, exclude_user=None):
+    subs = supabase.table('subscriptions').select('*').execute().data
+    for sub in subs:
+        if sub['username'] == exclude_user:
+            continue # Don't notify the person who just hid the cache
+        try:
+            webpush(
+                subscription_info=sub['sub_info'],
+                data=json.dumps({"title": title, "body": body}),
+                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_claims={"sub": VAPID_CLAIM_EMAIL}
+            )
+        except Exception as e:
+            print(f"Push failed for {sub['username']}: {e}")
+
+# --- Core App Routes ---
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
     try:
@@ -39,7 +82,6 @@ def handle_treasures():
     if request.method == 'GET':
         return jsonify(supabase.table('treasures').select('*').execute().data), 200
     else:
-        # POST: Upload logic
         lat, lng = float(request.form.get('lat')), float(request.form.get('lng'))
         title = request.form.get('title', 'Mystery Cache')
         desc, creator = request.form.get('description'), request.form.get('creator')
@@ -55,6 +97,10 @@ def handle_treasures():
 
         supabase.table('treasures').insert({"lat": lat, "lng": lng, "title": title, "description": desc, "image_url": image_url, "creator": creator}).execute()
         add_log(creator, f"hid a new cache: {title}")
+        
+        # Trigger Push Notification to all users
+        broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
+        
         return jsonify({"message": "Success"}), 200
 
 @app.route('/api/claim', methods=['POST'])
@@ -83,7 +129,6 @@ def get_profile(username):
     hidden = len(hidden_data)
     rank = "Master 👑" if (found + hidden*2) > 25 else "Novice 🌱"
     
-    # Calculate Dynamic Badges
     badges = []
     if found >= 1: badges.append("🧭 First Find")
     if found >= 5: badges.append("🦊 Expert Tracker")
@@ -91,12 +136,7 @@ def get_profile(username):
     if hidden >= 5: badges.append("🏛️ Local Legend")
     if found == 0 and hidden == 0: badges.append("🥚 Fresh Spawn")
 
-    return jsonify({
-        "found": found, 
-        "hidden": hidden, 
-        "rank": rank,
-        "badges": badges
-    }), 200
+    return jsonify({"found": found, "hidden": hidden, "rank": rank, "badges": badges}), 200
 
 @app.route('/api/friends/<username>', methods=['GET'])
 def get_friends(username):
