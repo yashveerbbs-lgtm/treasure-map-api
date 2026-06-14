@@ -39,6 +39,9 @@
 
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
+        /* NEW: Self-Centering Map Button */
+        #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+
         .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
         #profile-open-btn { right: 15px; }
         #settings-btn { right: 75px; }
@@ -80,6 +83,7 @@
             #bottom-panel { padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); bottom: 10px; left: 10px; right: 10px; }
             .status-badge { font-size: 16px; width: 90%; }
             #add-btn { width: 65px; height: 65px; bottom: 130px; right: 15px; font-size: 35px; }
+            #center-map-btn { bottom: 130px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             .modal-content { width: 92%; padding: 20px; }
         }
     </style>
@@ -132,6 +136,15 @@
             <button class="action-btn" style="margin-bottom: 10px;" onclick="editCache()">Save Changes</button>
             <button class="action-btn" style="background: #ff416c; color: white;" onclick="deleteCache()">🗑️ Delete Cache completely</button>
             <button class="action-btn close-btn" onclick="closeModal('manage-modal')">Cancel</button>
+        </div>
+    </div>
+
+    <div id="my-hides-modal" class="modal-overlay">
+        <div class="modal-content glass">
+            <h2 style="margin-top:0; text-align: center;">My Active Caches</h2>
+            <div id="my-hides-list" style="max-height: 40vh; overflow-y: auto; margin-bottom: 15px;">
+                </div>
+            <button class="action-btn close-btn" onclick="closeModal('my-hides-modal')">Close</button>
         </div>
     </div>
 
@@ -192,8 +205,10 @@
             <div class="profile-stat"><span>Found:</span> <strong id="profile-found">0</strong></div>
             <div class="profile-stat"><span>Hidden:</span> <strong id="profile-hidden">0</strong></div>
             
-            <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
+            <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
             
+            <button class="action-btn" style="background: linear-gradient(135deg, #ff9800, #f44336); color: white; margin-bottom: 15px;" onclick="openMyHides()">🧰 Manage My Active Caches</button>
+
             <h3 style="margin-bottom: 5px;">Send Friend Request</h3>
             <div style="display: flex; gap: 5px;">
                 <input type="text" id="friend-request-name" placeholder="Friend's Username" style="margin-bottom: 0;">
@@ -215,6 +230,8 @@
     <button id="feed-btn" class="top-btn" onclick="openFeed()">🔔</button>
     <button id="profile-open-btn" class="top-btn" onclick="openProfile()">👤</button>
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
+    
+    <button id="center-map-btn" onclick="centerMap()" title="Center Map on Me">🎯</button>
 
     <div id="top-panel" class="glass" onclick="openModal('leaderboard-modal')" title="Click for Full Rankings">
         <h3 class="header-title">🏆 Top Explorers</h3>
@@ -255,6 +272,8 @@
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
         let alertedCaches = new Set(); 
+        
+        let selectedManageCache = null; // NEW: Tracks which cache is currently being edited/deleted
 
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
@@ -375,6 +394,16 @@
         
         loadTreasures(); updateLeaderboard();
 
+        // NEW: Snap Map Function
+        function centerMap() {
+            if (currentLat !== 0 && currentLng !== 0) {
+                map.setView([currentLat, currentLng], 17);
+                playSFX();
+            } else {
+                popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info');
+            }
+        }
+
         function startGPS() {
             if (navigator.geolocation) {
                 if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
@@ -432,13 +461,13 @@
                             if(statusBadge.className !== "status-badge burning") playSFX(); 
                             statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; 
                             
-                            // NEW: Switch button type if user is the creator
+                            // Switch button appearance depending on creator
                             if (closestTreasure.creator === myUsername) {
                                 claimBtn.innerText = "MANAGE CACHE";
-                                claimBtn.style.background = "linear-gradient(135deg, #ff9800, #f44336)"; // Orange/Red color
+                                claimBtn.style.background = "linear-gradient(135deg, #ff9800, #f44336)";
                             } else {
                                 claimBtn.innerText = "LOG VISIT";
-                                claimBtn.style.background = ""; // Default green
+                                claimBtn.style.background = ""; 
                             }
                             claimBtn.style.display = "block";
                         } 
@@ -458,8 +487,8 @@
             if (!closestTreasure) return;
             playSFX();
             
-            // NEW: Open specific modal depending on who clicked
             if (closestTreasure.creator === myUsername) {
+                selectedManageCache = closestTreasure; // Locks target
                 document.getElementById('edit-cache-desc').value = closestTreasure.description || '';
                 openModal('manage-modal');
             } else {
@@ -469,7 +498,39 @@
             }
         });
 
-        // NEW: Submit Claim with Review/Rating
+        // NEW: Load the Global "My Hides" Menu
+        function openMyHides() {
+            closeModal('profile-modal');
+            const listDiv = document.getElementById('my-hides-list');
+            const myCaches = treasures.filter(t => t.creator === myUsername);
+            
+            if (myCaches.length === 0) {
+                listDiv.innerHTML = "<p style='text-align:center; font-size:14px;'>You haven't hidden any caches yet!</p>";
+            } else {
+                listDiv.innerHTML = myCaches.map(c => `
+                    <div style="background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 8px; text-align: left;">
+                        <strong style="color: var(--accent-color); font-size: 15px;">${c.title}</strong>
+                        <p style="font-size: 12px; margin: 5px 0; opacity: 0.8;">${c.description}</p>
+                        <div style="display: flex; gap: 5px; margin-top: 8px;">
+                            <button class="small-btn" style="background: linear-gradient(135deg, #ff9800, #f44336); color: white; width: 100%;" onclick="manageSpecificCache(${c.id})">⚙️ Manage This Cache</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            openModal('my-hides-modal');
+        }
+
+        // NEW: Select a specific cache from the global menu
+        function manageSpecificCache(id) {
+            selectedManageCache = treasures.find(t => t.id === id);
+            if(selectedManageCache) {
+                closeModal('my-hides-modal');
+                document.getElementById('edit-cache-desc').value = selectedManageCache.description || '';
+                openModal('manage-modal');
+            }
+        }
+
+        // UPDATE: Send claim to server
         function submitClaimWithReview() {
             const reviewText = document.getElementById('review-text').value;
             const diffRating = document.getElementById('review-difficulty').value;
@@ -499,10 +560,11 @@
             });
         }
 
-        // NEW: Edit Creator's Cache
+        // UPDATE: Send Edit Cache changes to server
         function editCache() {
+            if (!selectedManageCache) return;
             const newDesc = document.getElementById('edit-cache-desc').value;
-            fetch('/api/treasures/' + closestTreasure.id, {
+            fetch('/api/treasures/' + selectedManageCache.id, {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: myUsername, description: newDesc })
             }).then(res => res.json()).then(data => {
@@ -513,19 +575,29 @@
             });
         }
 
-        // NEW: Delete Creator's Cache
+        // UPDATE: Send Delete Cache command to server
         function deleteCache() {
+            if (!selectedManageCache) return;
             if(!confirm("Are you sure you want to permanently delete this cache?")) return;
-            fetch('/api/treasures/' + closestTreasure.id, {
+            fetch('/api/treasures/' + selectedManageCache.id, {
                 method: 'DELETE', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: myUsername })
             }).then(res => res.json()).then(data => {
                 if(data.error) { popupAlert('Error', data.error, 'error'); return; }
                 popupAlert('Deleted', 'Your cache was removed from the map.', 'info');
-                map.removeLayer(closestTreasure.marker);
-                treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
-                document.getElementById('claim-button').style.display = "none"; 
+                
+                // Instantly remove it from the map view
+                if(selectedManageCache.marker) map.removeLayer(selectedManageCache.marker);
+                treasures = treasures.filter(t => t.id !== selectedManageCache.id); 
+                
+                // If they deleted the one they are currently standing on, hide the button
+                if(closestTreasure && closestTreasure.id === selectedManageCache.id) {
+                    closestTreasure = null;
+                    document.getElementById('claim-button').style.display = "none"; 
+                }
+                selectedManageCache = null;
                 closeModal('manage-modal');
+                updateLeaderboard();
             });
         }
 
