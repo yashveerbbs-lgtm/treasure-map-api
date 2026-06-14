@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2857/2857355.png">
     <title>Geocatcher</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         /* === THEME VARIABLES === */
         :root { --bg-color: #000; --glass-bg: rgba(26, 26, 46, 0.85); --text-color: #fff; --accent-color: #64ffda; --input-bg: rgba(0,0,0,0.3); --border-color: rgba(255, 255, 255, 0.1); --popup-bg: rgba(26, 26, 46, 0.95); --modal-overlay: rgba(0,0,0,0.7); }
@@ -24,7 +25,8 @@
         .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; background: var(--input-bg); color: var(--text-color); }
         .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); min-height: 48px; }
 
-        #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; }
+        #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; cursor: pointer; }
+        #top-panel:hover { border-color: var(--accent-color); }
         .header-title { margin: 0 0 10px 0; font-size: 14px; color: var(--accent-color); text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
 
@@ -55,6 +57,8 @@
         .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .accept-btn { background: #00e676; color: #000; }
         .reject-btn { background: #ff416c; color: #fff; }
+        
+        .rank-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 10px 0; }
         
         .leaflet-popup-content-wrapper { background: var(--popup-bg); color: var(--text-color); border-radius: 12px; border: 1px solid var(--accent-color);}
         .leaflet-popup-tip { background: var(--popup-bg); }
@@ -108,6 +112,15 @@
             <h2 style="margin-top:0; text-align: center;">Activity</h2>
             <div id="feed-list" style="font-size: 14px; max-height: 40vh; overflow-y: auto;">Loading news...</div>
             <button class="action-btn close-btn" onclick="closeModal('feed-modal')">Close Feed</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-modal" class="modal-overlay">
+        <div class="modal-content glass" style="max-width: 400px;">
+            <h2 style="margin-top:0; text-align: center; color: var(--accent-color);">🏆 Global Rankings</h2>
+            <p style="text-align:center; font-size:12px; margin-top:-10px;">Finds = 10 XP | Hides = 20 XP</p>
+            <div id="full-leaderboard-list" style="margin-top: 15px;">Loading ranks...</div>
+            <button class="action-btn close-btn" onclick="closeModal('leaderboard-modal')">Close</button>
         </div>
     </div>
 
@@ -175,7 +188,7 @@
     <button id="profile-open-btn" class="top-btn" onclick="openProfile()">👤</button>
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
 
-    <div id="top-panel" class="glass">
+    <div id="top-panel" class="glass" onclick="openModal('leaderboard-modal')" title="Click for Full Rankings">
         <h3 class="header-title">🏆 Top Explorers</h3>
         <ul id="leaderboard-list"><li>Loading...</li></ul>
     </div>
@@ -189,6 +202,24 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // ==========================================
+        // UI HELPERS (SweetAlert2)
+        // ==========================================
+        const popupAlert = (title, text, icon) => {
+            Swal.fire({ title, text, icon, background: 'var(--glass-bg)', color: 'var(--text-color)', confirmButtonColor: 'var(--accent-color)', backdrop: 'rgba(0,0,0,0.6)' });
+        };
+
+        // NEW: SweetAlert Toast logic for Proximity Alerts
+        const Toast = Swal.mixin({
+            toast: true, position: 'top-end', showConfirmButton: false, timer: 4000,
+            timerProgressBar: true, background: 'var(--glass-bg)', color: 'var(--text-color)'
+        });
+
+        const treasureIcon = L.icon({
+            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png', 
+            iconSize: [45, 45], iconAnchor: [22, 45], popupAnchor: [0, -40]
+        });
+
+        // ==========================================
         // VARIABLES & INITIALIZATION
         // ==========================================
         let myUsername = localStorage.getItem('geocatcher_username');
@@ -196,6 +227,7 @@
         let mapTileLayer; let gpsWatcher;
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
+        let alertedCaches = new Set(); // NEW: Prevents spamming proximity notifications
 
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
@@ -259,7 +291,10 @@
                 myUsername = name;
                 document.getElementById('login-screen').style.display = 'none';
                 applySettings();
-            } else { alert("Please enter a name!"); }
+                popupAlert('Welcome Back!', `Ready to explore, ${name}?`, 'success');
+            } else { 
+                popupAlert('Hold Up!', 'Please enter an Explorer Name to continue.', 'warning'); 
+            }
         }
 
         // ==========================================
@@ -276,20 +311,39 @@
                     if (t.creator) popupHTML += `<span style="font-size:11px; opacity: 0.7;">Hidden by: ${t.creator}</span>`;
                     if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
                     if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
-                    t.marker = L.marker([t.lat, t.lng]).addTo(map).bindPopup(popupHTML);
+                    t.marker = L.marker([t.lat, t.lng], { icon: treasureIcon }).addTo(map).bindPopup(popupHTML);
                 });
             });
         }
         
         function updateLeaderboard() {
             fetch('/api/leaderboard').then(res => res.json()).then(data => {
-                const list = document.getElementById('leaderboard-list');
-                list.innerHTML = '';
-                data.forEach(entry => {
-                    if (appSettings.ghost && entry.username === myUsername) return;
-                    const li = document.createElement('li');
-                    li.innerHTML = `<strong style="color:var(--text-color);">${entry.username}</strong>: ${entry.count}`;
-                    list.appendChild(li);
+                const miniList = document.getElementById('leaderboard-list');
+                const fullList = document.getElementById('full-leaderboard-list');
+                miniList.innerHTML = ''; fullList.innerHTML = '';
+                
+                data.forEach((entry, index) => {
+                    let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔹';
+                    
+                    // Render Mini List (Top 3 only)
+                    if (index < 3) {
+                        if (!(appSettings.ghost && entry.username === myUsername)) {
+                            const li = document.createElement('li');
+                            li.innerHTML = `${medal} <strong style="color:var(--text-color);">${entry.username}</strong>: ${entry.score} XP`;
+                            miniList.appendChild(li);
+                        }
+                    }
+
+                    // Render Full Modal List
+                    if (!(appSettings.ghost && entry.username === myUsername)) {
+                        const row = document.createElement('div');
+                        row.className = "rank-row";
+                        row.innerHTML = `
+                            <span style="font-weight:bold;">${medal} ${entry.username}</span>
+                            <span style="color:var(--accent-color); font-weight:bold;">${entry.score} XP</span>
+                        `;
+                        fullList.appendChild(row);
+                    }
                 });
             });
         }
@@ -334,13 +388,27 @@
 
                         const statusBadge = document.getElementById('radar-status');
                         const claimBtn = document.getElementById('claim-button');
+                        const cacheKey = closestTreasure.lat + ',' + closestTreasure.lng;
 
-                        if (distanceMeters <= 20) {
+                        // NEW: Proximity Auto-Alert Logic
+                        if (distanceMeters <= 50 && distanceMeters > 20) {
+                            if (!alertedCaches.has('warm_' + cacheKey)) {
+                                Toast.fire({ icon: 'info', title: `Proximity Alert!`, text: `A cache is less than 50m away...` });
+                                alertedCaches.add('warm_' + cacheKey);
+                                playSFX();
+                            }
+                            statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
+                        } 
+                        else if (distanceMeters <= 20) {
+                            if (!alertedCaches.has('hot_' + cacheKey)) {
+                                Toast.fire({ icon: 'success', title: `BURNING HOT!`, text: `You are standing right on top of it!` });
+                                alertedCaches.add('hot_' + cacheKey);
+                                playSFX();
+                            }
                             if(statusBadge.className !== "status-badge burning") playSFX(); 
                             statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; claimBtn.style.display = "block";
-                        } else if (distanceMeters <= 100) {
-                            statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
-                        } else {
+                        } 
+                        else {
                             statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
                         }
                     }
@@ -359,8 +427,9 @@
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
             }).then(res => res.json()).then(data => {
-                if (data.error) { alert("Database Error: " + data.error); return; }
-                alert("🎉 Treasure Logged Successfully!");
+                if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
+                
+                popupAlert('🎉 Treasure Found!', 'You earned +10 XP!', 'success');
                 map.removeLayer(closestTreasure.marker);
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
                 claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
@@ -375,7 +444,7 @@
             const title = document.getElementById('cache-title').value;
             const desc = document.getElementById('cache-desc').value;
             const imgInput = document.getElementById('cache-img');
-            if (!title) { alert("Please give it a title!"); return; }
+            if (!title) { popupAlert('Missing Title', 'Please give your cache a name!', 'warning'); return; }
             playSFX();
 
             const formData = new FormData();
@@ -385,11 +454,11 @@
             if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
 
             fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
-                if(data.error) { alert("Error saving: " + data.error); return; }
-                alert("Location Hidden Successfully!");
+                if(data.error) { popupAlert('Error saving', data.error, 'error'); return; }
+                popupAlert('Location Hidden!', 'You earned +20 XP for hiding this cache.', 'success');
                 closeModal('add-modal');
                 document.getElementById('cache-title').value = ''; document.getElementById('cache-desc').value = ''; document.getElementById('cache-img').value = '';
-                loadTreasures(); 
+                loadTreasures(); updateLeaderboard();
             });
         }
 
@@ -442,7 +511,13 @@
             const friendName = document.getElementById('friend-request-name').value.trim();
             if(!friendName) return;
             fetch('/api/friend/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requester: myUsername, receiver: friendName }) })
-            .then(r => r.json()).then(data => { if(data.error) alert(data.error); else { alert("Request sent to " + friendName + "!"); document.getElementById('friend-request-name').value = ''; } });
+            .then(r => r.json()).then(data => { 
+                if(data.error) popupAlert('Uh oh!', data.error, 'error'); 
+                else { 
+                    popupAlert('Request Sent!', `You invited ${friendName} to connect.`, 'success'); 
+                    document.getElementById('friend-request-name').value = ''; 
+                } 
+            });
         }
 
         function respondFriend(requesterName, action) {
@@ -464,13 +539,13 @@
 
         async function setupPushNotifications() {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                alert("Push notifications are not supported on this browser.");
+                popupAlert('Unsupported', 'Push notifications are not supported on this browser.', 'error');
                 return;
             }
             try {
                 const permission = await Notification.requestPermission();
                 if (permission !== 'granted') {
-                    alert("Permission denied. Enable them in your device settings!");
+                    popupAlert('Permission Denied', 'Please enable notifications in your device settings.', 'warning');
                     return;
                 }
 
@@ -491,10 +566,10 @@
                     body: JSON.stringify({ username: myUsername, sub_info: subscription })
                 });
                 
-                alert("Alerts Enabled! You will be notified when someone hides a cache.");
+                popupAlert('Alerts Enabled!', 'You will be notified when activity happens nearby.', 'success');
             } catch(err) {
                 console.error("Push setup failed", err);
-                alert("Failed to setup notifications. Ensure you are on HTTPS.");
+                popupAlert('Setup Failed', 'Ensure you are connected securely via HTTPS.', 'error');
             }
         }
 
