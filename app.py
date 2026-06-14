@@ -99,7 +99,7 @@ def handle_treasures():
         broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
         return jsonify({"message": "Success"}), 200
 
-# NEW: Edit or Delete a Cache
+# Edit or Delete a Cache (WITH DATABASE LOCK FIX)
 @app.route('/api/treasures/<int:t_id>', methods=['PUT', 'DELETE'])
 def manage_treasure(t_id):
     username = request.json.get('username')
@@ -110,6 +110,10 @@ def manage_treasure(t_id):
         return jsonify({"error": "Unauthorized"}), 403
 
     if request.method == 'DELETE':
+        # FIX: Delete all associated player claims first to prevent database lock!
+        supabase.table('claims').delete().eq('treasure_id', t_id).execute()
+        
+        # Now it is safe to permanently delete the cache
         supabase.table('treasures').delete().eq('id', t_id).execute()
         add_log(username, f"removed their cache: {t_res.data[0]['title']}")
         return jsonify({"status": "deleted"}), 200
@@ -130,13 +134,11 @@ def claim_treasure():
     t_res = supabase.table('treasures').select('id, title, creator').eq('id', treasure_id).execute()
     if not t_res.data: return jsonify({"error": "Not found in database"}), 404
     
-    # NEW: Block creator from claiming their own cache
     if t_res.data[0]['creator'] == username:
         return jsonify({"error": "You cannot claim your own cache!"}), 403
     
     cache_title = t_res.data[0]['title']
     
-    # NEW: Insert review and difficulty into claims table
     supabase.table('claims').insert({
         "username": username, 
         "treasure_id": t_res.data[0]['id'],
