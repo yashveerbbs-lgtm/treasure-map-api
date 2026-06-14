@@ -39,7 +39,7 @@
         
         .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
         #profile-open-btn { right: 15px; }
-        #settings-btn { right: 75px; } /* New Settings Button */
+        #settings-btn { right: 75px; }
         #feed-btn { right: 135px; }
 
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
@@ -51,6 +51,10 @@
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
         .setting-row input[type="checkbox"] { width: 20px; height: 20px; }
+        .friend-li { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 8px; border-radius: 8px; margin-bottom: 5px; font-size: 14px; }
+        .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .accept-btn { background: #00e676; color: #000; }
+        .reject-btn { background: #ff416c; color: #fff; }
         
         .leaflet-popup-content-wrapper { background: var(--popup-bg); color: var(--text-color); border-radius: 12px; border: 1px solid var(--accent-color);}
         .leaflet-popup-tip { background: var(--popup-bg); }
@@ -139,11 +143,28 @@
     <div id="profile-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h2 id="profile-name" style="margin-top:0; text-align: center;">My Profile</h2>
+            
+            <div id="profile-badges" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center;"></div>
+            
             <div class="profile-stat"><span>Rank:</span> <strong id="profile-rank">Loading...</strong></div>
             <div class="profile-stat"><span>Found:</span> <strong id="profile-found">0</strong></div>
             <div class="profile-stat"><span>Hidden:</span> <strong id="profile-hidden">0</strong></div>
+            
             <hr style="border: 1px solid var(--border-color); margin: 20px 0;">
-            <button class="action-btn close-btn" onclick="closeModal('profile-modal')">Close Profile</button>
+            
+            <h3 style="margin-bottom: 5px;">Send Friend Request</h3>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="friend-request-name" placeholder="Friend's Username" style="margin-bottom: 0;">
+                <button class="action-btn" style="width: auto; margin-top: 0;" onclick="sendFriendRequest()">Add</button>
+            </div>
+
+            <h3 style="margin-bottom: 5px; margin-top: 20px;">Pending Requests</h3>
+            <div id="pending-list" style="font-size: 14px;">No pending requests.</div>
+
+            <h3 style="margin-bottom: 5px; margin-top: 20px;">My Friends</h3>
+            <div id="friends-list" style="font-size: 14px;">No friends added yet.</div>
+
+            <button class="action-btn close-btn" style="margin-top: 25px;" onclick="closeModal('profile-modal')">Close Profile</button>
         </div>
     </div>
 
@@ -185,7 +206,6 @@
         
         // Settings Setup
         function applySettings() {
-            // Map Theme
             if (mapTileLayer) map.removeLayer(mapTileLayer);
             if (appSettings.theme === 'light') {
                 document.body.classList.add('light-mode');
@@ -198,12 +218,10 @@
                 mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
 
-            // Audio
             const audioEl = document.getElementById('bg-music');
             if (appSettings.music === 'none') { audioEl.pause(); audioEl.src = ""; } 
-            else if (audioEl.src !== appSettings.music) { audioEl.src = appSettings.music; audioEl.play().catch(e => console.log("Waiting for user tap to play audio")); }
+            else if (audioEl.src !== appSettings.music) { audioEl.src = appSettings.music; audioEl.play().catch(e => console.log("Waiting for user tap")); }
 
-            // Update UI Toggles
             document.getElementById('set-map-theme').value = appSettings.theme;
             document.getElementById('set-music').value = appSettings.music;
             document.getElementById('set-sfx').checked = appSettings.sfx;
@@ -212,12 +230,9 @@
             document.getElementById('set-units').checked = appSettings.units;
             document.getElementById('set-ghost').checked = appSettings.ghost;
 
-            // Radar Ring Toggle
             if (!appSettings.radar && radarCircle) { map.removeLayer(radarCircle); radarCircle = null; }
-
-            // Restart GPS if battery setting changed
             startGPS();
-            updateLeaderboard(); // Refresh to apply ghost mode
+            updateLeaderboard(); 
         }
 
         function saveSettings() {
@@ -233,10 +248,7 @@
             applySettings();
         }
 
-        // Play SFX Helper
-        function playSFX() {
-            if (appSettings.sfx && navigator.vibrate) navigator.vibrate(50);
-        }
+        function playSFX() { if (appSettings.sfx && navigator.vibrate) navigator.vibrate(50); }
 
         applySettings();
 
@@ -247,7 +259,7 @@
                 localStorage.setItem('geocatcher_username', name);
                 myUsername = name;
                 document.getElementById('login-screen').style.display = 'none';
-                applySettings(); // Tries to start music after first tap!
+                applySettings();
             } else { alert("Please enter a name!"); }
         }
 
@@ -275,9 +287,7 @@
                 const list = document.getElementById('leaderboard-list');
                 list.innerHTML = '';
                 data.forEach(entry => {
-                    // Hide user if they have Ghost Mode on
                     if (appSettings.ghost && entry.username === myUsername) return;
-                    
                     const li = document.createElement('li');
                     li.innerHTML = `<strong style="color:var(--text-color);">${entry.username}</strong>: ${entry.count}`;
                     list.appendChild(li);
@@ -290,12 +300,7 @@
         function startGPS() {
             if (navigator.geolocation) {
                 if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
-                
-                const gpsOptions = {
-                    enableHighAccuracy: !appSettings.battery, // Turns off high drain if battery saver is ON
-                    maximumAge: appSettings.battery ? 10000 : 0,
-                    timeout: 10000
-                };
+                const gpsOptions = { enableHighAccuracy: !appSettings.battery, maximumAge: appSettings.battery ? 10000 : 0, timeout: 10000 };
 
                 gpsWatcher = navigator.geolocation.watchPosition((position) => {
                     currentLat = position.coords.latitude; currentLng = position.coords.longitude;
@@ -305,7 +310,6 @@
                     } else { userMarker.setLatLng([currentLat, currentLng]); }
                     userMarker.bringToFront();
 
-                    // Radar Ring
                     if (appSettings.radar) {
                         if (!radarCircle) radarCircle = L.circle([currentLat, currentLng], { radius: 50, color: 'rgba(100, 255, 218, 0.4)', fillOpacity: 0.1, weight: 1, dashArray: '5, 5' }).addTo(map);
                         else radarCircle.setLatLng([currentLat, currentLng]);
@@ -323,7 +327,6 @@
                         closestTreasure = currentClosest;
                         const distanceMeters = Math.round(shortestDistance);
                         
-                        // Handle Unit conversion
                         let displayDist = distanceMeters;
                         let unitText = "meters";
                         if (appSettings.units) { displayDist = Math.round(distanceMeters * 3.28084); unitText = "feet"; }
@@ -334,7 +337,7 @@
                         const claimBtn = document.getElementById('claim-button');
 
                         if (distanceMeters <= 20) {
-                            if(statusBadge.className !== "status-badge burning") playSFX(); // Ping when hot
+                            if(statusBadge.className !== "status-badge burning") playSFX(); 
                             statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; claimBtn.style.display = "block";
                         } else if (distanceMeters <= 100) {
                             statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
@@ -343,13 +346,12 @@
                         }
                     }
                 }, 
-                (error) => { console.log("GPS Error: ", error); }, 
-                gpsOptions); 
+                (error) => { console.log("GPS Error: ", error); }, gpsOptions); 
             }
         }
 
         // ==========================================
-        // ACTION BUTTONS
+        // ACTION BUTTONS & MODALS
         // ==========================================
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure || !myUsername) return;
@@ -359,14 +361,11 @@
                 body: JSON.stringify({ username: myUsername, lat: closestTreasure.lat, lng: closestTreasure.lng })
             }).then(res => res.json()).then(data => {
                 if (data.error) { alert("Database Error: " + data.error); return; }
-                
                 alert("🎉 Treasure Logged Successfully!");
                 map.removeLayer(closestTreasure.marker);
-                
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
                 claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
                 localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
-                
                 treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
                 document.getElementById('claim-button').style.display = "none"; 
                 updateLeaderboard(); 
@@ -405,15 +404,52 @@
             });
         }
 
+        // ==========================================
+        // PROFILE & FRIENDS
+        // ==========================================
         function openProfile() {
             if(!myUsername) return;
             document.getElementById('profile-name').innerText = myUsername + "'s Profile";
             openModal('profile-modal');
+            
             fetch('/api/profile/' + myUsername).then(r => r.json()).then(data => {
                 document.getElementById('profile-rank').innerText = data.rank || 'Unknown';
                 document.getElementById('profile-found').innerText = data.found || 0;
                 document.getElementById('profile-hidden').innerText = data.hidden || 0;
+                
+                // Render Dynamic Badges
+                const badgeContainer = document.getElementById('profile-badges');
+                if (data.badges && data.badges.length > 0) {
+                    badgeContainer.innerHTML = data.badges.map(b => `<span style="background:var(--accent-color); color:#000; padding:5px 10px; border-radius:15px; font-size:12px; font-weight:bold;">${b}</span>`).join('');
+                } else {
+                    badgeContainer.innerHTML = '';
+                }
             });
+            loadFriends();
+        }
+
+        function loadFriends() {
+            fetch('/api/friends/' + myUsername).then(r => r.json()).then(data => {
+                const fList = document.getElementById('friends-list');
+                const pList = document.getElementById('pending-list');
+                if(data.friends && data.friends.length > 0) { fList.innerHTML = data.friends.map(f => `<div class="friend-li"><span>🤝 ${f}</span></div>`).join(''); } 
+                else { fList.innerHTML = "No friends added yet."; }
+                if(data.pending && data.pending.length > 0) {
+                    pList.innerHTML = data.pending.map(p => `<div class="friend-li"><span>📨 ${p}</span><div><button class="small-btn accept-btn" onclick="respondFriend('${p}', 'accept')">✓</button><button class="small-btn reject-btn" onclick="respondFriend('${p}', 'reject')">✗</button></div></div>`).join('');
+                } else { pList.innerHTML = "No pending requests."; }
+            });
+        }
+
+        function sendFriendRequest() {
+            const friendName = document.getElementById('friend-request-name').value.trim();
+            if(!friendName) return;
+            fetch('/api/friend/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requester: myUsername, receiver: friendName }) })
+            .then(r => r.json()).then(data => { if(data.error) alert(data.error); else { alert("Request sent to " + friendName + "!"); document.getElementById('friend-request-name').value = ''; } });
+        }
+
+        function respondFriend(requesterName, action) {
+            fetch('/api/friend/respond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requester: requesterName, receiver: myUsername, action: action }) })
+            .then(() => loadFriends());
         }
     </script>
 </body>
