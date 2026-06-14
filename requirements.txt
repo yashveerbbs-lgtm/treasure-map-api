@@ -2,4 +2,4 @@ Flask==3.0.0
 supabase==2.6.0
 gunicorn==23.0.0
 flask-cors
-pywebpush==1.93.0
+pywebpush==2.3.0
