@@ -18,57 +18,44 @@
     
     <style>
         :root { --bg-color: #000; --glass-bg: rgba(26, 26, 46, 0.85); --text-color: #fff; --accent-color: #64ffda; --input-bg: rgba(0,0,0,0.3); --border-color: rgba(255, 255, 255, 0.1); --popup-bg: rgba(26, 26, 46, 0.95); --modal-overlay: rgba(0,0,0,0.7); }
-        
         body.light-mode { --bg-color: #e0e5ec; --glass-bg: rgba(255, 255, 255, 0.9); --text-color: #1a1a2e; --accent-color: #00b894; --input-bg: rgba(0,0,0,0.05); --border-color: rgba(0, 0, 0, 0.15); --popup-bg: rgba(255, 255, 255, 0.95); --modal-overlay: rgba(255,255,255,0.6); }
-        
         body.theme-heat { --bg-color: #3e1e1e; --glass-bg: rgba(60, 20, 20, 0.85); --accent-color: #ff5722; --border-color: rgba(255, 100, 100, 0.3); }
         body.theme-heat #map { filter: sepia(0.3) saturate(1.5) hue-rotate(-15deg); }
-        
         body.theme-rain { --bg-color: #1a2436; --glass-bg: rgba(20, 40, 70, 0.85); --accent-color: #4dd0e1; --border-color: rgba(100, 150, 255, 0.3); }
         body.theme-rain #map { filter: saturate(0.8) hue-rotate(15deg); }
-        
         body.theme-storm { --bg-color: #110e1a; --glass-bg: rgba(20, 15, 40, 0.85); --accent-color: #e040fb; --border-color: rgba(200, 100, 255, 0.3); }
         body.theme-storm #map { filter: contrast(1.2) saturate(0.7) hue-rotate(250deg); }
-        
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); overflow: hidden; transition: background 0.5s; }
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: filter 0.5s;}
         .glass { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); color: var(--text-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: background 0.3s, color 0.3s, border-color 0.3s; }
-        
         #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg-color); }
         .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
         .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; background: var(--input-bg); color: var(--text-color); }
         .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); min-height: 48px; }
-
         #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; cursor: pointer; }
+        #top-panel:hover { border-color: var(--accent-color); }
         .header-title { margin: 0 0 10px 0; font-size: 14px; color: var(--accent-color); text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
-
         #bottom-panel { position: absolute; bottom: 25px; left: 15px; right: 15px; border-radius: 25px; padding: 25px 20px; text-align: center; z-index: 1000; }
         .status-badge { font-size: 20px; font-weight: 800; padding: 10px 30px; border-radius: 30px; margin-bottom: 8px; display: inline-block; width: 80%; }
         .freezing { background: linear-gradient(135deg, #007bff, #00d2ff); color: white; }
         .warm { background: linear-gradient(135deg, #f2994a, #f2c94c); color: #000; }
         .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
         #claim-button { display: none; margin-top: 15px; }
-
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         #street-view-btn { position: absolute; bottom: 210px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-
         .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; transition: color 0.3s, border-color 0.3s;}
-        
         #profile-open-btn { right: 15px; }
         #settings-btn { right: 75px; }
         #feed-btn { right: 135px; }
         #weather-widget { right: 195px; min-width: 60px; pointer-events: none; font-size: 14px; color: var(--text-color); border-color: var(--border-color);}
-
         #offline-banner { position: absolute; top: 75px; left: 50%; transform: translateX(-50%); z-index: 4000; width: 85%; max-width: 340px; padding: 10px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: bold; background: rgba(255, 65, 108, 0.9); color: white; display: none; box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4); border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
-
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
         .modal-content h2, .modal-content h3 { color: var(--accent-color); transition: color 0.3s;}
         .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
         .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase;}
-        
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
         .setting-row input[type="checkbox"] { width: 20px; height: 20px; }
@@ -76,37 +63,29 @@
         .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .accept-btn { background: #00e676; color: #000; }
         .reject-btn { background: #ff416c; color: #fff; }
-        
         .rank-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 10px 0; }
-        
         .leaflet-popup-content-wrapper { background: var(--popup-bg); color: var(--text-color); border-radius: 12px; border: 1px solid var(--accent-color);}
         .leaflet-popup-tip { background: var(--popup-bg); }
         .popup-img { width: 100%; border-radius: 8px; margin-top: 5px; max-height: 150px; object-fit: cover; }
         .popup-title { font-size: 16px; font-weight: bold; color: var(--accent-color); margin: 0; }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
-
-        #streetview-container { width: 100%; height: 60vh; border-radius: 12px; background: #222; margin-top: 10px; border: 1px solid var(--border-color); }
-
         @media (max-width: 600px) {
             #top-panel { width: 130px; padding: 10px; top: 10px; left: 10px; max-height: 90px; }
             .header-title { font-size: 12px; margin-bottom: 5px; }
             #leaderboard-list { font-size: 11px; }
-
             .top-btn { padding: 8px 12px; font-size: 12px; top: 10px; min-width: 44px; }
             #profile-open-btn { right: 10px; }
             #settings-btn { right: 65px; }
             #feed-btn { right: 120px; }
             #weather-widget { right: 175px; }
             #offline-banner { top: 65px; width: 90%; font-size: 11px; }
-
             #bottom-panel { padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); bottom: 10px; left: 10px; right: 10px; }
             .status-badge { font-size: 16px; width: 90%; }
             #add-btn { width: 65px; height: 65px; bottom: 130px; right: 15px; font-size: 35px; }
             #center-map-btn { bottom: 130px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             #street-view-btn { bottom: 185px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             .modal-content { width: 92%; padding: 20px; }
-            #streetview-container { height: 65vh; }
         }
     </style>
 </head>
@@ -120,14 +99,6 @@
             <h2>Welcome to Geocatcher</h2>
             <input type="text" id="username-input" placeholder="Enter Explorer Name">
             <button class="action-btn" onclick="login()">Start Exploring</button>
-        </div>
-    </div>
-
-    <div id="streetview-modal" class="modal-overlay">
-        <div class="modal-content glass" style="max-width: 600px; width: 90%;">
-            <h3 style="margin-top: 0; text-align: center; color: var(--accent-color);">🛣️ In-App Street View</h3>
-            <div id="streetview-container"></div>
-            <button class="close-btn" onclick="closeModal('streetview-modal')">Return to Map</button>
         </div>
     </div>
 
@@ -200,12 +171,12 @@
         <div class="modal-content glass">
             <h2 style="margin-top:0; text-align: center;">Settings</h2>
             <div class="setting-row" style="border-bottom:none; margin-bottom: 5px;">
-                <span style="font-weight:bold; color:var(--accent-color);">Dynamic Weather Overlays ☀️⛈️</span> 
+                <span style="font-weight:bold; color:var(--accent-color);">Dynamic Weather Theme ☀️⛈️</span> 
                 <input type="checkbox" id="set-dynamic-weather" onchange="saveSettings()">
             </div>
-            <p style="font-size: 11px; margin-top:0; opacity:0.8;">Applies storm and heat filters over your base map.</p>
+            <p style="font-size: 11px; margin-top:0; opacity:0.8;">Map automatically adapts to real-world weather and day/night cycle.</p>
 
-            <label style="font-size: 13px; color: var(--accent-color); margin-top:10px; display:block;">Base Map Theme</label>
+            <label style="font-size: 13px; color: var(--accent-color); margin-top:10px; display:block;">Manual Map Theme</label>
             <select id="set-map-theme" onchange="saveSettings()">
                 <option value="dark">Midnight (Dark)</option>
                 <option value="light">Daylight (Light)</option>
@@ -233,7 +204,7 @@
         <div class="modal-content glass">
             <h2 id="profile-name" style="margin-top:0; text-align: center;">👦 My Profile</h2>
             <h3 style="margin-bottom: 5px; margin-top: -10px;">Customize Profile</h3>
-            <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <div style="flex: 1;">
                     <label style="font-size: 11px; color: var(--accent-color);">My Avatar</label>
                     <select id="select-avatar" onchange="saveCustomization()" style="width: 100%; padding: 8px; border-radius: 5px; background: var(--input-bg); color: #fff; border: 1px solid var(--border-color);">
@@ -251,20 +222,19 @@
                 </div>
             </div>
 
-            <label style="font-size: 11px; color: var(--accent-color); margin-top: 10px; display:block;">Equip Title</label>
-            <select id="select-title" onchange="saveCustomization()" style="width: 100%; padding: 8px; border-radius: 5px; background: var(--input-bg); color: #fff; border: 1px solid var(--border-color); margin-bottom: 10px;">
-                </select>
-            <div style="display: flex; gap: 5px; margin-bottom: 15px;">
-                <input type="text" id="secret-code-input" placeholder="Secret Title Code..." style="margin-bottom: 0;">
-                <button class="action-btn" style="width: auto; margin-top: 0; min-height: 38px;" onclick="redeemSecretCode()">Redeem</button>
-            </div>
-
             <div id="profile-badges" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center;"></div>
             <div class="profile-stat"><span>Rank:</span> <strong id="profile-rank">Loading...</strong></div>
             <div class="profile-stat"><span>Found:</span> <strong id="profile-found">0</strong></div>
             <div class="profile-stat"><span>Hidden:</span> <strong id="profile-hidden">0</strong></div>
             <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
             <button class="action-btn" style="background: linear-gradient(135deg, #ff9800, #f44336); color: white; margin-bottom: 15px;" onclick="openMyHides()">🧰 Manage My Active Caches</button>
+
+            <h3 style="margin-bottom: 5px;">Redeem Secret Title Code</h3>
+            <div style="display: flex; gap: 5px; margin-bottom: 15px;">
+                <input type="text" id="secret-code-input" placeholder="Enter Code" style="margin-bottom: 0;">
+                <button class="action-btn" style="width: auto; margin-top: 0; background: var(--accent-color);" onclick="redeemSecretCode()">Claim</button>
+            </div>
+
             <h3 style="margin-bottom: 5px;">Send Friend Request</h3>
             <div style="display: flex; gap: 5px;">
                 <input type="text" id="friend-request-name" placeholder="Friend's Username" style="margin-bottom: 0;">
@@ -311,20 +281,16 @@
 
         let myUsername = localStorage.getItem('geocatcher_username');
         let currentLat = 0; let currentLng = 0;
-        let mapTileLayer, gpsWatcher;
+        let mapTileLayer, gpsWatcher, map;
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
         let alertedCaches = new Set(); 
         let selectedManageCache = null; 
         let currentRadarState = "freezing";
-        let googleMapsLoaded = false;
 
         let myAvatar = localStorage.getItem('geocatcher_avatar') || '👦';
         let myMarker = localStorage.getItem('geocatcher_marker') || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
-        
-        // --- TITLE SYSTEM VARIABLES ---
         let myTitle = localStorage.getItem('geocatcher_title') || '';
-        let unlockedTitles = JSON.parse(localStorage.getItem('geocatcher_unlocked_titles')) || ['Explorer', 'Novice'];
 
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false, dynamicWeather: true
@@ -387,25 +353,21 @@
             }, 3000);
         }
 
-        // --- NEW INDEPENDENT THEME LOGIC ---
         function applySettings() {
             if (!map) return;
             document.body.classList.remove('light-mode', 'theme-heat', 'theme-rain', 'theme-storm');
             if (mapTileLayer) map.removeLayer(mapTileLayer);
 
-            // 1. Strictly apply the Manual Base Map chosen by the user
-            if (appSettings.theme === 'light') {
-                document.body.classList.add('light-mode');
-                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-            } else if (appSettings.theme === 'satellite') {
-                mapTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
-            } else {
-                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-            }
-
-            // 2. Add dynamic weather overlays ON TOP of the base map if enabled
-            if (appSettings.dynamicWeather && lastWeatherObj) {
-                applyDynamicTheme(lastWeatherObj);
+            if (appSettings.dynamicWeather && lastWeatherObj) applyDynamicTheme(lastWeatherObj);
+            else {
+                if (appSettings.theme === 'light') {
+                    document.body.classList.add('light-mode');
+                    mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+                } else if (appSettings.theme === 'satellite') {
+                    mapTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+                } else {
+                    mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                }
             }
 
             const audioEl = document.getElementById('bg-music');
@@ -439,51 +401,13 @@
             applySettings();
         }
 
-        // --- TITLE POPULATION & REDEMPTION ---
-        function populateTitles() {
-            const select = document.getElementById('select-title');
-            select.innerHTML = '<option value="">No Title</option>' + 
-                unlockedTitles.map(t => `<option value="${t}">${t}</option>`).join('');
-            select.value = myTitle;
-        }
-
-        function redeemSecretCode() {
-            const code = document.getElementById('secret-code-input').value.trim().toUpperCase();
-            let newTitle = "";
-            
-            if (code === "DEVCODE") newTitle = "Developer";
-            else if (code === "BUDDY") newTitle = "Developer's Friend";
-            else if (code === "YASHVEER") newTitle = "Mine";
-            else if (code === "KING") newTitle = "King";
-            else {
-                popupAlert('Invalid Code', 'That secret code does not exist or has expired.', 'error');
-                return;
-            }
-
-            if (unlockedTitles.includes(newTitle)) {
-                popupAlert('Already Unlocked', `You already own the [${newTitle}] title!`, 'info');
-                return;
-            }
-
-            unlockedTitles.push(newTitle);
-            localStorage.setItem('geocatcher_unlocked_titles', JSON.stringify(unlockedTitles));
-            populateTitles();
-            triggerHapticPattern('success');
-            popupAlert('Title Unlocked!', `You have unlocked the exclusive [${newTitle}] title!`, 'success');
-            document.getElementById('secret-code-input').value = '';
-        }
-
         function saveCustomization() {
             myAvatar = document.getElementById('select-avatar').value;
             myMarker = document.getElementById('select-marker').value;
-            myTitle = document.getElementById('select-title').value;
-            
             localStorage.setItem('geocatcher_avatar', myAvatar);
             localStorage.setItem('geocatcher_marker', myMarker);
-            localStorage.setItem('geocatcher_title', myTitle);
-            
-            const titleDisplay = myTitle ? `[${myTitle}] ` : '';
-            document.getElementById('profile-name').innerText = `${myAvatar} ${titleDisplay}${myUsername}'s Profile`;
+            const titleDisplay = myTitle ? ` [${myTitle}]` : '';
+            document.getElementById('profile-name').innerText = `${myAvatar}${titleDisplay} ${myUsername}'s Profile`;
         }
 
         if (myUsername) { 
@@ -523,7 +447,12 @@
         }
 
         function applyDynamicTheme(w) {
-            // Only adds the CSS filters over the base map, does NOT override manual base map selection
+            if (w.is_day === 1) {
+                document.body.classList.add('light-mode');
+                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            } else {
+                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            }
             if (w.temperature >= 38) document.body.classList.add('theme-heat'); 
             else if (w.weathercode > 50 && w.weathercode < 90) document.body.classList.add('theme-rain');
             else if (w.weathercode >= 90) document.body.classList.add('theme-storm');
@@ -536,56 +465,35 @@
             } else { popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info'); }
         }
 
-        // INBUILT STREET VIEW ENGINE 
+        // --- NEW NATIVE NAVIGATION ---
         function openStreetView() {
-            let lat = currentLat;
-            let lng = currentLng;
-
-            if (lat === 0 || lng === 0) {
-                popupAlert('No Signal', 'Wait for GPS satellite synchronization before viewing routes.', 'warning');
+            triggerHapticPattern('click');
+            if (currentLat === 0 || currentLng === 0) {
+                popupAlert('GPS Searching', 'Wait for GPS signal to lock...', 'warning');
                 return;
             }
-            triggerHapticPattern('click');
-            openModal('streetview-modal');
-
-            if (googleMapsLoaded) {
-                initStreetViewPanorama(lat, lng);
-            } else {
-                document.getElementById('streetview-container').innerHTML = `<p style="text-align:center; padding-top:40px; color:#aaa; font-size:14px;">Loading Google Panorama Engine...</p>`;
-                const script = document.createElement('script');
-                script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDFYu0i0vKzxeDl85uFxJ6CWI6qXRickew&callback=mapsApiCallback`;
-                script.async = true;
-                script.defer = true;
-                window.mapsApiCallback = function() {
-                    googleMapsLoaded = true;
-                    initStreetViewPanorama(lat, lng);
-                };
-                document.head.appendChild(script);
-            }
+            // Forces the device to open the native Google Maps app
+            window.location.href = `google.navigation:q=${currentLat},${currentLng}&mode=w`;
         }
 
-        function initStreetViewPanorama(targetLat, targetLng) {
-            const container = document.getElementById('streetview-container');
-            container.innerHTML = ''; 
-            
-            const panorama = new google.maps.StreetViewPanorama(container, {
-                position: { lat: targetLat, lng: targetLng },
-                pov: { heading: 165, pitch: 0 },
-                zoom: 1,
-                visible: true,
-                addressControl: false,
-                showRoadLabels: true
-            });
+        // --- NEW SECRET TITLE SYSTEM ---
+        function redeemSecretCode() {
+            const code = document.getElementById('secret-code-input').value.trim().toUpperCase();
+            const titles = {
+                "ARCHITECT": "The Architect", "FOUNDER": "Founder",
+                "DAYONE": "Alpha Tester", "ELITE": "VIP Explorer",
+                "HOKAGE": "Hokage", "GODMODE": "Map God", "PHANTOM": "The Phantom"
+            };
 
-            panorama.addListener('status_changed', () => {
-                if (panorama.getStatus() !== 'OK') {
-                    container.innerHTML = `
-                        <div style="text-align:center; padding: 40px 20px; color: #ff416c;">
-                            <p style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">📍 No Coverage Available</p>
-                            <p style="font-size: 13px; opacity: 0.8;">Google Street View cars haven't mapped this exact spot yet.</p>
-                        </div>`;
-                }
-            });
+            if (titles[code]) {
+                myTitle = titles[code];
+                localStorage.setItem('geocatcher_title', titles[code]);
+                popupAlert('Title Unlocked!', `You earned: [${titles[code]}]`, 'success');
+                document.getElementById('profile-name').innerText = `${myAvatar} [${titles[code]}] ${myUsername}'s Profile`;
+                document.getElementById('secret-code-input').value = '';
+            } else {
+                popupAlert('Invalid Code', 'That code is incorrect or expired.', 'error');
+            }
         }
 
         function startGPS() {
@@ -754,11 +662,7 @@
             const formData = new FormData();
             formData.append('lat', currentLat); formData.append('lng', currentLng);
             formData.append('title', title); formData.append('description', desc);
-            
-            // Append the Title to the creator string if they have one equipped
-            const formattedCreator = myTitle ? `[${myTitle}] ${myUsername}` : myUsername;
-            formData.append('creator', formattedCreator);
-            
+            formData.append('creator', myUsername);
             formData.append('marker_url', myMarker);
 
             if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
@@ -776,7 +680,7 @@
         function openMyHides() {
             closeModal('profile-modal');
             const listDiv = document.getElementById('my-hides-list');
-            const myCaches = treasures.filter(t => t.creator === myUsername || t.creator.includes(myUsername));
+            const myCaches = treasures.filter(t => t.creator === myUsername);
             
             if (myCaches.length === 0) {
                 listDiv.innerHTML = "<p style='text-align:center; font-size:14px;'>You haven't hidden any caches yet!</p>";
@@ -854,11 +758,8 @@
             if(!myUsername) return;
             document.getElementById('select-avatar').value = myAvatar;
             document.getElementById('select-marker').value = myMarker;
-            
-            populateTitles(); // Refresh the dropdown when profile opens
-            const titleDisplay = myTitle ? `[${myTitle}] ` : '';
-            document.getElementById('profile-name').innerText = `${myAvatar} ${titleDisplay}${myUsername}'s Profile`;
-            
+            const titleDisplay = myTitle ? ` [${myTitle}]` : '';
+            document.getElementById('profile-name').innerText = `${myAvatar}${titleDisplay} ${myUsername}'s Profile`;
             openModal('profile-modal');
             
             fetch('/api/profile/' + myUsername).then(r => r.json()).then(data => {
