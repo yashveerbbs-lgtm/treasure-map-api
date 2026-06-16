@@ -16,12 +16,10 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
     <style>
-        /* === STANDARD THEME VARIABLES === */
         :root { --bg-color: #000; --glass-bg: rgba(26, 26, 46, 0.85); --text-color: #fff; --accent-color: #64ffda; --input-bg: rgba(0,0,0,0.3); --border-color: rgba(255, 255, 255, 0.1); --popup-bg: rgba(26, 26, 46, 0.95); --modal-overlay: rgba(0,0,0,0.7); }
         
         body.light-mode { --bg-color: #e0e5ec; --glass-bg: rgba(255, 255, 255, 0.9); --text-color: #1a1a2e; --accent-color: #00b894; --input-bg: rgba(0,0,0,0.05); --border-color: rgba(0, 0, 0, 0.15); --popup-bg: rgba(255, 255, 255, 0.95); --modal-overlay: rgba(255,255,255,0.6); }
         
-        /* === DYNAMIC WEATHER THEMES === */
         body.theme-heat { --bg-color: #3e1e1e; --glass-bg: rgba(60, 20, 20, 0.85); --accent-color: #ff5722; --border-color: rgba(255, 100, 100, 0.3); }
         body.theme-heat #map { filter: sepia(0.3) saturate(1.5) hue-rotate(-15deg); }
         
@@ -53,7 +51,6 @@
         #claim-button { display: none; margin-top: 15px; }
 
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
-        
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         #street-view-btn { position: absolute; bottom: 210px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
 
@@ -68,7 +65,7 @@
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
         .modal-content h2, .modal-content h3 { color: var(--accent-color); transition: color 0.3s;}
         .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
-        .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; }
+        .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase;}
         
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
@@ -126,7 +123,7 @@
             <label style="font-size: 13px; font-weight: bold; color: var(--accent-color);">Attach a Photo (Optional)</label>
             <input type="file" id="cache-img" accept="image/*" capture="environment">
             <button class="action-btn" onclick="submitCache()">Hide it!</button>
-            <button class="action-btn close-btn" onclick="closeModal('add-modal')">Cancel</button>
+            <button class="close-btn" onclick="closeModal('add-modal')">Cancel</button>
         </div>
     </div>
 
@@ -143,7 +140,7 @@
             </select>
             <textarea id="review-text" rows="3" placeholder="Write a review for the creator..."></textarea>
             <button class="action-btn" onclick="submitClaimWithReview()">Submit & Claim</button>
-            <button class="action-btn close-btn" onclick="closeModal('review-modal')">Cancel</button>
+            <button class="close-btn" onclick="closeModal('review-modal')">Cancel</button>
         </div>
     </div>
 
@@ -153,8 +150,8 @@
             <label style="font-size: 13px; color: var(--accent-color);">Edit Description</label>
             <textarea id="edit-cache-desc" rows="3"></textarea>
             <button class="action-btn" style="margin-bottom: 10px;" onclick="editCache()">Save Changes</button>
-            <button class="action-btn" style="background: #ff416c; color: white;" onclick="deleteCache()">🗑️ Delete Cache completely</button>
-            <button class="action-btn close-btn" onclick="closeModal('manage-modal')">Cancel</button>
+            <button class="action-btn" style="background: #ff416c; color: white; margin-bottom: 10px;" onclick="deleteCache()">🗑️ Delete Cache completely</button>
+            <button class="close-btn" onclick="closeModal('manage-modal')">Cancel</button>
         </div>
     </div>
 
@@ -162,7 +159,7 @@
         <div class="modal-content glass">
             <h2 style="margin-top:0; text-align: center;">My Active Caches</h2>
             <div id="my-hides-list" style="max-height: 40vh; overflow-y: auto; margin-bottom: 15px;"></div>
-            <button class="action-btn close-btn" onclick="closeModal('my-hides-modal')">Close</button>
+            <button class="close-btn" onclick="closeModal('my-hides-modal')">Close</button>
         </div>
     </div>
 
@@ -170,7 +167,7 @@
         <div class="modal-content glass">
             <h2 style="margin-top:0; text-align: center;">Activity</h2>
             <div id="feed-list" style="font-size: 14px; max-height: 40vh; overflow-y: auto;">Loading news...</div>
-            <button class="action-btn close-btn" onclick="closeModal('feed-modal')">Close Feed</button>
+            <button class="close-btn" onclick="closeModal('feed-modal')">Close Feed</button>
         </div>
     </div>
 
@@ -179,7 +176,7 @@
             <h2 style="margin-top:0; text-align: center; color: var(--accent-color);">🏆 Global Rankings</h2>
             <p style="text-align:center; font-size:12px; margin-top:-10px;">Finds = 10 XP | Hides = 20 XP</p>
             <div id="full-leaderboard-list" style="margin-top: 15px;">Loading ranks...</div>
-            <button class="action-btn close-btn" onclick="closeModal('leaderboard-modal')">Close</button>
+            <button class="close-btn" onclick="closeModal('leaderboard-modal')">Close</button>
         </div>
     </div>
 
@@ -214,8 +211,8 @@
             <div class="setting-row"><span>Imperial Units (Feet)</span> <input type="checkbox" id="set-units" onchange="saveSettings()"></div>
             <div class="setting-row"><span>Ghost Mode (Hide Name)</span> <input type="checkbox" id="set-ghost" onchange="saveSettings()"></div>
 
-            <button class="action-btn" style="background: linear-gradient(135deg, #007bff, #00d2ff); color: white;" onclick="setupPushNotifications()">🔔 Enable Push Alerts</button>
-            <button class="action-btn close-btn" onclick="closeModal('settings-modal')" style="margin-top: 15px;">Save & Close</button>
+            <button class="action-btn" style="background: linear-gradient(135deg, #007bff, #00d2ff); color: white; margin-bottom: 10px;" onclick="setupPushNotifications()">🔔 Enable Push Alerts</button>
+            <button class="close-btn" onclick="closeModal('settings-modal')">Save & Close</button>
         </div>
     </div>
 
@@ -270,7 +267,7 @@
             <h3 style="margin-bottom: 5px; margin-top: 20px;">My Friends</h3>
             <div id="friends-list" style="font-size: 14px;">No friends added yet.</div>
 
-            <button class="action-btn close-btn" style="margin-top: 25px;" onclick="closeModal('profile-modal')">Close Profile</button>
+            <button class="close-btn" style="margin-top: 25px;" onclick="closeModal('profile-modal')">Close Profile</button>
         </div>
     </div>
 
@@ -282,7 +279,6 @@
     <div id="weather-widget" class="top-btn glass">🌤️ Sync...</div>
     
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
-    
     <button id="center-map-btn" onclick="centerMap()" title="Center Map on Me">🎯</button>
     <button id="street-view-btn" onclick="openStreetView()" title="Open Street View">🛣️</button>
 
@@ -299,7 +295,7 @@
 
     <script>
         // ==========================================
-        // UI HELPERS (SweetAlert2 & Confetti)
+        // UI HELPERS & GLOBALS
         // ==========================================
         const popupAlert = (title, text, icon) => {
             Swal.fire({ title, text, icon, background: 'var(--glass-bg)', color: 'var(--text-color)', confirmButtonColor: 'var(--accent-color)', backdrop: 'rgba(0,0,0,0.6)' });
@@ -310,12 +306,9 @@
             timerProgressBar: true, background: 'var(--glass-bg)', color: 'var(--text-color)'
         });
 
-        // ==========================================
-        // VARIABLES & INITIALIZATION
-        // ==========================================
         let myUsername = localStorage.getItem('geocatcher_username');
         let currentLat = 0; let currentLng = 0;
-        let mapTileLayer; let gpsWatcher;
+        let map, mapTileLayer, gpsWatcher;
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
         let alertedCaches = new Set(); 
@@ -324,7 +317,6 @@
         let myAvatar = localStorage.getItem('geocatcher_avatar') || '👦';
         let myMarker = localStorage.getItem('geocatcher_marker') || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
 
-        // NEW: Dynamic Weather Defaults to TRUE
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false, dynamicWeather: true
         };
@@ -332,19 +324,28 @@
         let lastWeatherObj = null;
         let lastWeatherFetch = 0;
 
-        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
-        L.control.zoom({ position: 'topleft' }).addTo(map);
-        
+        // ==========================================
+        // LOAD MAP SECURELY AFTER PAGE LOAD
+        // ==========================================
+        window.addEventListener('load', () => {
+            map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
+            L.control.zoom({ position: 'topleft' }).addTo(map);
+            
+            applySettings();
+            loadTreasures();
+        });
+
+        // ==========================================
+        // SETTINGS & THEME LOGIC
+        // ==========================================
         function applySettings() {
-            // First clear all custom weather CSS classes
+            if (!map) return;
             document.body.classList.remove('light-mode', 'theme-heat', 'theme-rain', 'theme-storm');
             if (mapTileLayer) map.removeLayer(mapTileLayer);
 
-            // NEW: If Dynamic Weather is ON and we have weather data, let it control the theme!
             if (appSettings.dynamicWeather && lastWeatherObj) {
                 applyDynamicTheme(lastWeatherObj);
             } else {
-                // Manual Fallback Logic
                 if (appSettings.theme === 'light') {
                     document.body.classList.add('light-mode');
                     mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
@@ -397,9 +398,8 @@
 
         function playSFX() { if (appSettings.sfx && navigator.vibrate) navigator.vibrate(50); }
 
-        applySettings();
-
         if (myUsername) { document.getElementById('login-screen').style.display = 'none'; }
+        
         function login() {
             const name = document.getElementById('username-input').value.trim();
             if (name) {
@@ -414,11 +414,11 @@
         }
 
         // ==========================================
-        // NEW: LIVE WEATHER & DYNAMIC MAPS ENGINE
+        // WEATHER & GPS LOGIC
         // ==========================================
         function updateWeather(lat, lng) {
             const now = Date.now();
-            if (now - lastWeatherFetch < 300000) return; // Only fetch every 5 mins to save data
+            if (now - lastWeatherFetch < 300000) return; 
             lastWeatherFetch = now;
             
             fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
@@ -426,21 +426,18 @@
                 const w = data.current_weather;
                 lastWeatherObj = w;
                 
-                let emoji = '☀️'; // Clear
-                if(w.weathercode > 0) emoji = '⛅'; // Cloudy
-                if(w.weathercode > 50) emoji = '🌧️'; // Rain
-                if(w.weathercode > 90) emoji = '⛈️'; // Storm
+                let emoji = '☀️'; 
+                if(w.weathercode > 0) emoji = '⛅'; 
+                if(w.weathercode > 50) emoji = '🌧️'; 
+                if(w.weathercode > 90) emoji = '⛈️'; 
                 
                 document.getElementById('weather-widget').innerText = `${emoji} ${Math.round(w.temperature)}°C`;
                 
-                if (appSettings.dynamicWeather) {
-                    applySettings(); // Re-trigger settings to apply dynamic CSS
-                }
+                if (appSettings.dynamicWeather) { applySettings(); }
             }).catch(e => console.log("Weather error: ", e));
         }
 
         function applyDynamicTheme(w) {
-            // Day or Night Base Map
             if (w.is_day === 1) {
                 document.body.classList.add('light-mode');
                 mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
@@ -448,72 +445,13 @@
                 mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
 
-            // Extreme Weather CSS Overlays
-            if (w.temperature >= 38) document.body.classList.add('theme-heat'); // Bikaner Summer Mode!
+            if (w.temperature >= 38) document.body.classList.add('theme-heat'); 
             else if (w.weathercode > 50 && w.weathercode < 90) document.body.classList.add('theme-rain');
             else if (w.weathercode >= 90) document.body.classList.add('theme-storm');
         }
 
-        // ==========================================
-        // DATA & GPS LOGIC
-        // ==========================================
-        function loadTreasures() {
-            fetch('/api/treasures?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
-                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
-                treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
-                treasures = data.filter(t => !claimedCaches.includes(t.lat + ',' + t.lng));
-                
-                treasures.forEach(t => {
-                    let popupHTML = `<p class="popup-title">${t.title || 'Mystery Cache'}</p>`;
-                    if (t.creator) popupHTML += `<span style="font-size:11px; opacity: 0.7;">Hidden by: ${t.creator}</span>`;
-                    if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
-                    if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
-                    
-                    const iconUrl = t.marker_url || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
-                    const customIcon = L.icon({
-                        iconUrl: iconUrl,
-                        iconSize: [45, 45], iconAnchor: [22, 45], popupAnchor: [0, -40]
-                    });
-
-                    t.marker = L.marker([t.lat, t.lng], { icon: customIcon }).addTo(map).bindPopup(popupHTML);
-                });
-            });
-        }
-        
-        function updateLeaderboard() {
-            fetch('/api/leaderboard?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
-                const miniList = document.getElementById('leaderboard-list');
-                const fullList = document.getElementById('full-leaderboard-list');
-                miniList.innerHTML = ''; fullList.innerHTML = '';
-                
-                data.forEach((entry, index) => {
-                    let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔹';
-                    
-                    if (index < 3) {
-                        if (!(appSettings.ghost && entry.username === myUsername)) {
-                            const li = document.createElement('li');
-                            li.innerHTML = `${medal} <strong style="color:var(--text-color);">${entry.username}</strong>: ${entry.score} XP`;
-                            miniList.appendChild(li);
-                        }
-                    }
-
-                    if (!(appSettings.ghost && entry.username === myUsername)) {
-                        const row = document.createElement('div');
-                        row.className = "rank-row";
-                        row.innerHTML = `
-                            <span style="font-weight:bold;">${medal} ${entry.username}</span>
-                            <span style="color:var(--accent-color); font-weight:bold;">${entry.score} XP</span>
-                        `;
-                        fullList.appendChild(row);
-                    }
-                });
-            });
-        }
-        
-        loadTreasures(); updateLeaderboard();
-
         function centerMap() {
-            if (currentLat !== 0 && currentLng !== 0) {
+            if (currentLat !== 0 && currentLng !== 0 && map) {
                 map.setView([currentLat, currentLng], 17);
                 playSFX();
             } else {
@@ -521,11 +459,10 @@
             }
         }
 
-        // NEW: Fixed Street View Link (No more Google Maps app hijacking)
         function openStreetView() {
             if (currentLat !== 0 && currentLng !== 0) {
                 playSFX();
-                const streetViewUrl = `https://www.google.com/maps?layer=c&cbll=${currentLat},${currentLng}`;
+                const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${currentLat},${currentLng}`;
                 window.open(streetViewUrl, '_blank');
             } else {
                 popupAlert('No GPS Signal', 'Wait for satellite lock before opening Street View.', 'warning');
@@ -533,6 +470,7 @@
         }
 
         function startGPS() {
+            if (!map) return;
             if (navigator.geolocation) {
                 if (gpsWatcher) navigator.geolocation.clearWatch(gpsWatcher);
                 const gpsOptions = { enableHighAccuracy: !appSettings.battery, maximumAge: appSettings.battery ? 10000 : 0, timeout: 10000 };
@@ -540,7 +478,7 @@
                 gpsWatcher = navigator.geolocation.watchPosition((position) => {
                     currentLat = position.coords.latitude; currentLng = position.coords.longitude;
                     
-                    updateWeather(currentLat, currentLng); // Ping the weather API in the background
+                    updateWeather(currentLat, currentLng);
 
                     if (!userMarker) {
                         userMarker = L.circleMarker([currentLat, currentLng], { color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 8, weight: 3 }).addTo(map);
@@ -611,17 +549,115 @@
         }
 
         // ==========================================
-        // ACTION BUTTONS & MODALS
+        // TREASURE LOGIC & SERVER COMM
         // ==========================================
+        function loadTreasures() {
+            if (!map) return;
+            fetch('/api/treasures?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
+                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
+                treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
+                treasures = data.filter(t => !claimedCaches.includes(t.lat + ',' + t.lng));
+                
+                treasures.forEach(t => {
+                    let popupHTML = `<p class="popup-title">${t.title || 'Mystery Cache'}</p>`;
+                    if (t.creator) popupHTML += `<span style="font-size:11px; opacity: 0.7;">Hidden by: ${t.creator}</span>`;
+                    if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
+                    if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
+                    
+                    const iconUrl = t.marker_url || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
+                    const customIcon = L.icon({
+                        iconUrl: iconUrl, iconSize: [45, 45], iconAnchor: [22, 45], popupAnchor: [0, -40]
+                    });
+
+                    t.marker = L.marker([t.lat, t.lng], { icon: customIcon }).addTo(map).bindPopup(popupHTML);
+                });
+            });
+        }
+        
+        function updateLeaderboard() {
+            fetch('/api/leaderboard?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
+                const miniList = document.getElementById('leaderboard-list');
+                const fullList = document.getElementById('full-leaderboard-list');
+                miniList.innerHTML = ''; fullList.innerHTML = '';
+                
+                data.forEach((entry, index) => {
+                    let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🔹';
+                    
+                    if (index < 3 && !(appSettings.ghost && entry.username === myUsername)) {
+                        const li = document.createElement('li');
+                        li.innerHTML = `${medal} <strong style="color:var(--text-color);">${entry.username}</strong>: ${entry.score} XP`;
+                        miniList.appendChild(li);
+                    }
+                    if (!(appSettings.ghost && entry.username === myUsername)) {
+                        const row = document.createElement('div');
+                        row.className = "rank-row";
+                        row.innerHTML = `<span style="font-weight:bold;">${medal} ${entry.username}</span><span style="color:var(--accent-color); font-weight:bold;">${entry.score} XP</span>`;
+                        fullList.appendChild(row);
+                    }
+                });
+            });
+        }
+
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure) return;
             playSFX();
-            
             document.getElementById('review-text').value = '';
             document.getElementById('review-difficulty').value = '3';
             openModal('review-modal');
         });
 
+        function submitClaimWithReview() {
+            const reviewText = document.getElementById('review-text').value;
+            const diffRating = document.getElementById('review-difficulty').value;
+
+            fetch('/api/claim', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: myUsername, treasure_id: closestTreasure.id, review: reviewText, difficulty: diffRating })
+            }).then(res => res.json()).then(data => {
+                if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
+                
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
+                popupAlert('🎉 Treasure Found!', 'Review saved. You earned +10 XP!', 'success');
+                
+                if (map) map.removeLayer(closestTreasure.marker);
+                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
+                claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
+                localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
+                
+                treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
+                document.getElementById('claim-button').style.display = "none"; 
+                closeModal('review-modal');
+                updateLeaderboard(); 
+            });
+        }
+
+        function submitCache() {
+            const title = document.getElementById('cache-title').value;
+            const desc = document.getElementById('cache-desc').value;
+            const imgInput = document.getElementById('cache-img');
+            if (!title) { popupAlert('Missing Title', 'Please give your cache a name!', 'warning'); return; }
+            playSFX();
+
+            const formData = new FormData();
+            formData.append('lat', currentLat); formData.append('lng', currentLng);
+            formData.append('title', title); formData.append('description', desc);
+            formData.append('creator', myUsername);
+            formData.append('marker_url', myMarker);
+
+            if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
+
+            fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
+                if(data.error) { popupAlert('Error saving', data.error, 'error'); return; }
+                popupAlert('Location Hidden!', 'You earned +20 XP for hiding this cache.', 'success');
+                closeModal('add-modal');
+                document.getElementById('cache-title').value = ''; document.getElementById('cache-desc').value = ''; document.getElementById('cache-img').value = '';
+                loadTreasures(); updateLeaderboard();
+            });
+        }
+
+        // ==========================================
+        // MY HIDES MANAGEMENT
+        // ==========================================
         function openMyHides() {
             closeModal('profile-modal');
             const listDiv = document.getElementById('my-hides-list');
@@ -652,33 +688,6 @@
             }
         }
 
-        function submitClaimWithReview() {
-            const reviewText = document.getElementById('review-text').value;
-            const diffRating = document.getElementById('review-difficulty').value;
-
-            fetch('/api/claim', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: myUsername, treasure_id: closestTreasure.id, review: reviewText, difficulty: diffRating })
-            }).then(res => res.json()).then(data => {
-                if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
-                
-                // NEW: Confetti Cannon Explosion on successful claim!
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
-                
-                popupAlert('🎉 Treasure Found!', 'Review saved. You earned +10 XP!', 'success');
-                map.removeLayer(closestTreasure.marker);
-                
-                const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
-                claimedCaches.push(closestTreasure.lat + ',' + closestTreasure.lng);
-                localStorage.setItem('myClaimedCaches', JSON.stringify(claimedCaches));
-                
-                treasures = treasures.filter(t => t !== closestTreasure); closestTreasure = null;
-                document.getElementById('claim-button').style.display = "none"; 
-                closeModal('review-modal');
-                updateLeaderboard(); 
-            });
-        }
-
         function editCache() {
             if (!selectedManageCache) return;
             const newDesc = document.getElementById('edit-cache-desc').value;
@@ -703,7 +712,7 @@
                 if(data.error) { popupAlert('Error', data.error, 'error'); return; }
                 popupAlert('Deleted', 'Your cache was removed from the map.', 'info');
                 
-                if(selectedManageCache.marker) map.removeLayer(selectedManageCache.marker);
+                if(selectedManageCache.marker && map) map.removeLayer(selectedManageCache.marker);
                 treasures = treasures.filter(t => t.id !== selectedManageCache.id); 
                 
                 if(closestTreasure && closestTreasure.id === selectedManageCache.id) {
@@ -716,30 +725,9 @@
             });
         }
 
-        function submitCache() {
-            const title = document.getElementById('cache-title').value;
-            const desc = document.getElementById('cache-desc').value;
-            const imgInput = document.getElementById('cache-img');
-            if (!title) { popupAlert('Missing Title', 'Please give your cache a name!', 'warning'); return; }
-            playSFX();
-
-            const formData = new FormData();
-            formData.append('lat', currentLat); formData.append('lng', currentLng);
-            formData.append('title', title); formData.append('description', desc);
-            formData.append('creator', myUsername);
-            formData.append('marker_url', myMarker);
-
-            if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
-
-            fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
-                if(data.error) { popupAlert('Error saving', data.error, 'error'); return; }
-                popupAlert('Location Hidden!', 'You earned +20 XP for hiding this cache.', 'success');
-                closeModal('add-modal');
-                document.getElementById('cache-title').value = ''; document.getElementById('cache-desc').value = ''; document.getElementById('cache-img').value = '';
-                loadTreasures(); updateLeaderboard();
-            });
-        }
-
+        // ==========================================
+        // MODALS & PROFILE
+        // ==========================================
         function openModal(id) { document.getElementById(id).style.display = 'flex'; playSFX(); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; playSFX(); }
 
@@ -750,29 +738,21 @@
             });
         }
 
-        // ==========================================
-        // PROFILE & FRIENDS
-        // ==========================================
         function openProfile() {
             if(!myUsername) return;
-            
             document.getElementById('select-avatar').value = myAvatar;
             document.getElementById('select-marker').value = myMarker;
             document.getElementById('profile-name').innerText = `${myAvatar} ${myUsername}'s Profile`;
-            
             openModal('profile-modal');
             
             fetch('/api/profile/' + myUsername).then(r => r.json()).then(data => {
                 document.getElementById('profile-rank').innerText = data.rank || 'Unknown';
                 document.getElementById('profile-found').innerText = data.found || 0;
                 document.getElementById('profile-hidden').innerText = data.hidden || 0;
-                
                 const badgeContainer = document.getElementById('profile-badges');
                 if (data.badges && data.badges.length > 0) {
                     badgeContainer.innerHTML = data.badges.map(b => `<span style="background:var(--accent-color); color:#000; padding:5px 10px; border-radius:15px; font-size:12px; font-weight:bold;">${b}</span>`).join('');
-                } else {
-                    badgeContainer.innerHTML = '';
-                }
+                } else { badgeContainer.innerHTML = ''; }
             });
             loadFriends();
         }
@@ -795,10 +775,7 @@
             fetch('/api/friend/request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requester: myUsername, receiver: friendName }) })
             .then(r => r.json()).then(data => { 
                 if(data.error) popupAlert('Uh oh!', data.error, 'error'); 
-                else { 
-                    popupAlert('Request Sent!', `You invited ${friendName} to connect.`, 'success'); 
-                    document.getElementById('friend-request-name').value = ''; 
-                } 
+                else { popupAlert('Request Sent!', `You invited ${friendName} to connect.`, 'success'); document.getElementById('friend-request-name').value = ''; } 
             });
         }
 
@@ -808,7 +785,7 @@
         }
 
         // ==========================================
-        // PUSH NOTIFICATIONS & REAL-TIME SYNC
+        // PUSH NOTIFICATIONS
         // ==========================================
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -820,47 +797,25 @@
         }
 
         async function setupPushNotifications() {
-            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                popupAlert('Unsupported', 'Push notifications are not supported on this browser.', 'error');
-                return;
-            }
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) { popupAlert('Unsupported', 'Push notifications not supported on this browser.', 'error'); return; }
             try {
                 const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
-                    popupAlert('Permission Denied', 'Please enable notifications in your device settings.', 'warning');
-                    return;
-                }
-
+                if (permission !== 'granted') { popupAlert('Permission Denied', 'Please enable notifications in device settings.', 'warning'); return; }
                 const register = await navigator.serviceWorker.register('/sw.js');
-                
                 const res = await fetch('/api/vapid_public_key');
                 const data = await res.json();
                 const publicKey = urlBase64ToUint8Array(data.public_key);
-
-                const subscription = await register.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: publicKey
-                });
-
-                await fetch('/api/subscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: myUsername, sub_info: subscription })
-                });
-                
+                const subscription = await register.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: publicKey });
+                await fetch('/api/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: myUsername, sub_info: subscription }) });
                 popupAlert('Alerts Enabled!', 'You will be notified when activity happens nearby.', 'success');
-            } catch(err) {
-                console.error("Push setup failed", err);
-                popupAlert('Setup Failed', 'Ensure you are connected securely via HTTPS.', 'error');
-            }
+            } catch(err) { console.error("Push setup failed", err); popupAlert('Setup Failed', 'Ensure you are connected securely via HTTPS.', 'error'); }
         }
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.action === 'RELOAD_MAP') {
                     console.log("Background update received! Syncing map...");
-                    loadTreasures(); 
-                    updateLeaderboard();
+                    loadTreasures(); updateLeaderboard();
                 }
             });
         }
