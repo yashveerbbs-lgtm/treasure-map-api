@@ -458,8 +458,19 @@
         function openStreetView() {
             if (currentLat !== 0 && currentLng !== 0) {
                 playSFX();
+                // Official Google Maps URL scheme for Street View panorama
                 const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${currentLat},${currentLng}`;
-                window.open(streetViewUrl, '_blank');
+                
+                // Create a temporary hidden link element to force an external application breakout
+                const externalLink = document.createElement('a');
+                externalLink.href = streetViewUrl;
+                externalLink.target = '_blank';
+                externalLink.rel = 'noopener noreferrer';
+                
+                // Trigger the click and clean up
+                document.body.appendChild(externalLink);
+                externalLink.click();
+                document.body.removeChild(externalLink);
             } else {
                 popupAlert('No GPS Signal', 'Wait for satellite lock before opening Street View.', 'warning');
             }
