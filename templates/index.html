@@ -346,8 +346,8 @@
         // DATA & GPS LOGIC
         // ==========================================
         function loadTreasures() {
-            // FIX: Prevent browser from using old cached data
-            fetch('/api/treasures', { cache: 'no-store' }).then(res => res.json()).then(data => {
+            // FIX: The ultimate cache-buster! Appending the exact millisecond forces a fresh download.
+            fetch('/api/treasures?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
                 treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
                 treasures = data.filter(t => !claimedCaches.includes(t.lat + ',' + t.lng));
@@ -363,8 +363,7 @@
         }
         
         function updateLeaderboard() {
-            // FIX: Prevent browser from showing old cached scores
-            fetch('/api/leaderboard', { cache: 'no-store' }).then(res => res.json()).then(data => {
+            fetch('/api/leaderboard?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
                 const miniList = document.getElementById('leaderboard-list');
                 const fullList = document.getElementById('full-leaderboard-list');
                 miniList.innerHTML = ''; fullList.innerHTML = '';
