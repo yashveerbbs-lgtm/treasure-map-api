@@ -32,11 +32,9 @@ def manifest():
         "icons": [{"src": "https://cdn-icons-png.flaticon.com/512/2857/2857355.png", "sizes": "512x512", "type": "image/png"}]
     }), 200
 
-# --- Logs Helper ---
 def add_log(username, activity):
     supabase.table('logs').insert({"username": username, "activity": activity}).execute()
 
-# --- Push Notification Routes ---
 @app.route('/api/vapid_public_key', methods=['GET'])
 def vapid_key():
     return jsonify({"public_key": VAPID_PUBLIC_KEY}), 200
@@ -66,7 +64,6 @@ def broadcast_notification(title, body, exclude_user=None):
         except Exception as e:
             print(f"Push failed for {sub['username']}: {e}")
 
-# --- Core App Routes ---
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
     try:
@@ -84,6 +81,9 @@ def handle_treasures():
         title = request.form.get('title', 'Mystery Cache')
         desc, creator = request.form.get('description'), request.form.get('creator')
         
+        # NEW: Catch the custom marker icon from the frontend!
+        marker_url = request.form.get('marker_url', 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png')
+        
         image_url = ""
         if 'image' in request.files:
             file = request.files['image']
@@ -93,31 +93,26 @@ def handle_treasures():
                 supabase.storage.from_('cache-images').upload(file_name, file.read(), {"content-type": file.content_type})
                 image_url = supabase.storage.from_('cache-images').get_public_url(file_name)
 
-        supabase.table('treasures').insert({"lat": lat, "lng": lng, "title": title, "description": desc, "image_url": image_url, "creator": creator}).execute()
-        add_log(creator, f"hid a new cache: {title}")
+        supabase.table('treasures').insert({
+            "lat": lat, "lng": lng, "title": title, "description": desc, 
+            "image_url": image_url, "creator": creator, "marker_url": marker_url
+        }).execute()
         
+        add_log(creator, f"hid a new cache: {title}")
         broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
         return jsonify({"message": "Success"}), 200
 
-# Edit or Delete a Cache
 @app.route('/api/treasures/<int:t_id>', methods=['PUT', 'DELETE'])
 def manage_treasure(t_id):
     username = request.json.get('username')
-    
-    # Verify the cache belongs to the user
     t_res = supabase.table('treasures').select('creator, title').eq('id', t_id).execute()
     if not t_res.data or t_res.data[0]['creator'] != username:
         return jsonify({"error": "Unauthorized"}), 403
 
     if request.method == 'DELETE':
         try:
-            # 1. Delete associated player claims first
             supabase.table('claims').delete().eq('treasure_id', t_id).execute()
-            
-            # 2. Permanently delete the cache
             del_res = supabase.table('treasures').delete().eq('id', t_id).execute()
-            
-            # FIX: Check if Supabase silently blocked the deletion!
             if len(del_res.data) == 0:
                 return jsonify({"error": "Supabase blocked the deletion! Please check your table RLS settings."}), 400
                 
@@ -148,14 +143,10 @@ def claim_treasure():
     cache_title = t_res.data[0]['title']
     
     supabase.table('claims').insert({
-        "username": username, 
-        "treasure_id": t_res.data[0]['id'],
-        "review": review,
-        "difficulty": difficulty
+        "username": username, "treasure_id": t_res.data[0]['id'], "review": review, "difficulty": difficulty
     }).execute()
     
     add_log(username, f"found {cache_title} and rated it {difficulty} Stars!")
-    
     broadcast_notification("Cache Discovered! 🗺️", f"{username} just found '{cache_title}'!")
     return jsonify({"status": "success"}), 201
 
