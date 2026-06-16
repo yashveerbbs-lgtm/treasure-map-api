@@ -18,43 +18,57 @@
     
     <style>
         :root { --bg-color: #000; --glass-bg: rgba(26, 26, 46, 0.85); --text-color: #fff; --accent-color: #64ffda; --input-bg: rgba(0,0,0,0.3); --border-color: rgba(255, 255, 255, 0.1); --popup-bg: rgba(26, 26, 46, 0.95); --modal-overlay: rgba(0,0,0,0.7); }
+        
         body.light-mode { --bg-color: #e0e5ec; --glass-bg: rgba(255, 255, 255, 0.9); --text-color: #1a1a2e; --accent-color: #00b894; --input-bg: rgba(0,0,0,0.05); --border-color: rgba(0, 0, 0, 0.15); --popup-bg: rgba(255, 255, 255, 0.95); --modal-overlay: rgba(255,255,255,0.6); }
+        
         body.theme-heat { --bg-color: #3e1e1e; --glass-bg: rgba(60, 20, 20, 0.85); --accent-color: #ff5722; --border-color: rgba(255, 100, 100, 0.3); }
         body.theme-heat #map { filter: sepia(0.3) saturate(1.5) hue-rotate(-15deg); }
+        
         body.theme-rain { --bg-color: #1a2436; --glass-bg: rgba(20, 40, 70, 0.85); --accent-color: #4dd0e1; --border-color: rgba(100, 150, 255, 0.3); }
         body.theme-rain #map { filter: saturate(0.8) hue-rotate(15deg); }
+        
         body.theme-storm { --bg-color: #110e1a; --glass-bg: rgba(20, 15, 40, 0.85); --accent-color: #e040fb; --border-color: rgba(200, 100, 255, 0.3); }
         body.theme-storm #map { filter: contrast(1.2) saturate(0.7) hue-rotate(250deg); }
+        
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); overflow: hidden; transition: background 0.5s; }
         #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: filter 0.5s;}
         .glass { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); color: var(--text-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: background 0.3s, color 0.3s, border-color 0.3s; }
+        
         #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg-color); }
         .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
         .login-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; font-size: 16px; text-align: center; box-sizing: border-box; background: var(--input-bg); color: var(--text-color); }
         .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); min-height: 48px; }
+
         #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; cursor: pointer; }
         .header-title { margin: 0 0 10px 0; font-size: 14px; color: var(--accent-color); text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
+
         #bottom-panel { position: absolute; bottom: 25px; left: 15px; right: 15px; border-radius: 25px; padding: 25px 20px; text-align: center; z-index: 1000; }
         .status-badge { font-size: 20px; font-weight: 800; padding: 10px 30px; border-radius: 30px; margin-bottom: 8px; display: inline-block; width: 80%; }
         .freezing { background: linear-gradient(135deg, #007bff, #00d2ff); color: white; }
         .warm { background: linear-gradient(135deg, #f2994a, #f2c94c); color: #000; }
         .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
         #claim-button { display: none; margin-top: 15px; }
+
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         #street-view-btn { position: absolute; bottom: 210px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+
         .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; transition: color 0.3s, border-color 0.3s;}
+        
         #profile-open-btn { right: 15px; }
         #settings-btn { right: 75px; }
         #feed-btn { right: 135px; }
         #weather-widget { right: 195px; min-width: 60px; pointer-events: none; font-size: 14px; color: var(--text-color); border-color: var(--border-color);}
+
         #offline-banner { position: absolute; top: 75px; left: 50%; transform: translateX(-50%); z-index: 4000; width: 85%; max-width: 340px; padding: 10px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: bold; background: rgba(255, 65, 108, 0.9); color: white; display: none; box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4); border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
+
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
         .modal-content h2, .modal-content h3 { color: var(--accent-color); transition: color 0.3s;}
         .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
         .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase;}
+        
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
         .setting-row input[type="checkbox"] { width: 20px; height: 20px; }
@@ -62,24 +76,30 @@
         .small-btn { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 12px; }
         .accept-btn { background: #00e676; color: #000; }
         .reject-btn { background: #ff416c; color: #fff; }
+        
         .rank-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding: 10px 0; }
+        
         .leaflet-popup-content-wrapper { background: var(--popup-bg); color: var(--text-color); border-radius: 12px; border: 1px solid var(--accent-color);}
         .leaflet-popup-tip { background: var(--popup-bg); }
         .popup-img { width: 100%; border-radius: 8px; margin-top: 5px; max-height: 150px; object-fit: cover; }
         .popup-title { font-size: 16px; font-weight: bold; color: var(--accent-color); margin: 0; }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
+
         #streetview-container { width: 100%; height: 60vh; border-radius: 12px; background: #222; margin-top: 10px; border: 1px solid var(--border-color); }
+
         @media (max-width: 600px) {
             #top-panel { width: 130px; padding: 10px; top: 10px; left: 10px; max-height: 90px; }
             .header-title { font-size: 12px; margin-bottom: 5px; }
             #leaderboard-list { font-size: 11px; }
+
             .top-btn { padding: 8px 12px; font-size: 12px; top: 10px; min-width: 44px; }
             #profile-open-btn { right: 10px; }
             #settings-btn { right: 65px; }
             #feed-btn { right: 120px; }
             #weather-widget { right: 175px; }
             #offline-banner { top: 65px; width: 90%; font-size: 11px; }
+
             #bottom-panel { padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); bottom: 10px; left: 10px; right: 10px; }
             .status-badge { font-size: 16px; width: 90%; }
             #add-btn { width: 65px; height: 65px; bottom: 130px; right: 15px; font-size: 35px; }
@@ -750,7 +770,9 @@
         function openMyHides() {
             closeModal('profile-modal');
             const listDiv = document.getElementById('my-hides-list');
-            const myCaches = treasures.filter(t => t.creator === myUsername || t.creator.includes(myUsername));
+            
+            // Allow managing if the username matches exactly OR is inside a title bracket
+            const myCaches = treasures.filter(t => t.creator === myUsername || t.creator.includes(`] ${myUsername}`));
             
             if (myCaches.length === 0) {
                 listDiv.innerHTML = "<p style='text-align:center; font-size:14px;'>You haven't hidden any caches yet!</p>";
