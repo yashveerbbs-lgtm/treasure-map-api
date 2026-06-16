@@ -10,8 +10,9 @@
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2857/2857355.png">
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2857/2857355.png">
     <title>Geocatcher</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     
@@ -308,7 +309,7 @@
 
         let myUsername = localStorage.getItem('geocatcher_username');
         let currentLat = 0; let currentLng = 0;
-        let map, mapTileLayer, gpsWatcher;
+        let mapTileLayer, gpsWatcher;
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
         let alertedCaches = new Set(); 
@@ -325,15 +326,10 @@
         let lastWeatherFetch = 0;
 
         // ==========================================
-        // LOAD MAP SECURELY AFTER PAGE LOAD
+        // INITIALIZE MAP (Safe because Leaflet is in <head>)
         // ==========================================
-        window.addEventListener('load', () => {
-            map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
-            L.control.zoom({ position: 'topleft' }).addTo(map);
-            
-            applySettings();
-            loadTreasures();
-        });
+        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
+        L.control.zoom({ position: 'topleft' }).addTo(map);
 
         // ==========================================
         // SETTINGS & THEME LOGIC
@@ -819,6 +815,10 @@
                 }
             });
         }
+        
+        // Final bootstrap trigger
+        applySettings();
+        loadTreasures();
     </script>
 </body>
 </html>
