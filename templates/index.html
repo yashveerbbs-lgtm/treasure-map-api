@@ -40,6 +40,7 @@
         .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); min-height: 48px; }
 
         #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; cursor: pointer; }
+        #top-panel:hover { border-color: var(--accent-color); }
         .header-title { margin: 0 0 10px 0; font-size: 14px; color: var(--accent-color); text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
 
@@ -50,11 +51,11 @@
         .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
         #claim-button { display: none; margin-top: 15px; }
 
-        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         #street-view-btn { position: absolute; bottom: 210px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
 
-        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
+        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; transition: color 0.3s, border-color 0.3s;}
         
         #profile-open-btn { right: 15px; }
         #settings-btn { right: 75px; }
@@ -65,8 +66,9 @@
 
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
+        .modal-content h2, .modal-content h3 { color: var(--accent-color); transition: color 0.3s;}
         .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
-        .close-btn { background: #ff416c; margin-top: 10px; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase;}
+        .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase;}
         
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
@@ -485,14 +487,11 @@
             } else { popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info'); }
         }
 
+        // INBUILT STREET VIEW ENGINE (Fixed Location Logic)
         function openStreetView() {
+            // Strictly use the player's current location, ignoring caches
             let lat = currentLat;
             let lng = currentLng;
-
-            if (closestTreasure) {
-                lat = closestTreasure.lat;
-                lng = closestTreasure.lng;
-            }
 
             if (lat === 0 || lng === 0) {
                 popupAlert('No Signal', 'Wait for GPS satellite synchronization before viewing routes.', 'warning');
@@ -506,6 +505,7 @@
             } else {
                 document.getElementById('streetview-container').innerHTML = `<p style="text-align:center; padding-top:40px; color:#aaa; font-size:14px;">Loading Google Panorama Engine...</p>`;
                 const script = document.createElement('script');
+                // USING THE PROVIDED API KEY
                 script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDFYu0i0vKzxeDl85uFxJ6CWI6qXRickew&callback=mapsApiCallback`;
                 script.async = true;
                 script.defer = true;
