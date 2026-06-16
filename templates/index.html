@@ -455,19 +455,18 @@
             }
         }
 
+        // NEW: Fixed Official Google Maps Street View URI
         function openStreetView() {
             if (currentLat !== 0 && currentLng !== 0) {
                 playSFX();
-                // Official Google Maps URL scheme for Street View panorama
+                // Official Google Maps API deep-link prevents the PWA back-button history trap
                 const streetViewUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${currentLat},${currentLng}`;
                 
-                // Create a temporary hidden link element to force an external application breakout
                 const externalLink = document.createElement('a');
                 externalLink.href = streetViewUrl;
                 externalLink.target = '_blank';
                 externalLink.rel = 'noopener noreferrer';
                 
-                // Trigger the click and clean up
                 document.body.appendChild(externalLink);
                 externalLink.click();
                 document.body.removeChild(externalLink);
