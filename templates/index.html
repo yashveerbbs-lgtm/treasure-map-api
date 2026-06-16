@@ -11,15 +11,29 @@
     <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2857/2857355.png">
     <title>Geocatcher</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
     <style>
-        /* === THEME VARIABLES === */
+        /* === STANDARD THEME VARIABLES === */
         :root { --bg-color: #000; --glass-bg: rgba(26, 26, 46, 0.85); --text-color: #fff; --accent-color: #64ffda; --input-bg: rgba(0,0,0,0.3); --border-color: rgba(255, 255, 255, 0.1); --popup-bg: rgba(26, 26, 46, 0.95); --modal-overlay: rgba(0,0,0,0.7); }
+        
         body.light-mode { --bg-color: #e0e5ec; --glass-bg: rgba(255, 255, 255, 0.9); --text-color: #1a1a2e; --accent-color: #00b894; --input-bg: rgba(0,0,0,0.05); --border-color: rgba(0, 0, 0, 0.15); --popup-bg: rgba(255, 255, 255, 0.95); --modal-overlay: rgba(255,255,255,0.6); }
         
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); overflow: hidden; transition: background 0.3s; }
-        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        .glass { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); color: var(--text-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: background 0.3s, color 0.3s; }
+        /* === DYNAMIC WEATHER THEMES === */
+        body.theme-heat { --bg-color: #3e1e1e; --glass-bg: rgba(60, 20, 20, 0.85); --accent-color: #ff5722; --border-color: rgba(255, 100, 100, 0.3); }
+        body.theme-heat #map { filter: sepia(0.3) saturate(1.5) hue-rotate(-15deg); }
+        
+        body.theme-rain { --bg-color: #1a2436; --glass-bg: rgba(20, 40, 70, 0.85); --accent-color: #4dd0e1; --border-color: rgba(100, 150, 255, 0.3); }
+        body.theme-rain #map { filter: saturate(0.8) hue-rotate(15deg); }
+        
+        body.theme-storm { --bg-color: #110e1a; --glass-bg: rgba(20, 15, 40, 0.85); --accent-color: #e040fb; --border-color: rgba(200, 100, 255, 0.3); }
+        body.theme-storm #map { filter: contrast(1.2) saturate(0.7) hue-rotate(250deg); }
+        
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg-color); color: var(--text-color); overflow: hidden; transition: background 0.5s; }
+        #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; transition: filter 0.5s;}
+        .glass { background: var(--glass-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); color: var(--text-color); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: background 0.3s, color 0.3s, border-color 0.3s; }
         
         #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 3000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--bg-color); }
         .login-box { padding: 40px; border-radius: 20px; width: 80%; max-width: 300px; }
@@ -38,21 +52,21 @@
         .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
         #claim-button { display: none; margin-top: 15px; }
 
-        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
         
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        
-        /* NEW: Street View Button */
         #street-view-btn { position: absolute; bottom: 210px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
 
-        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
+        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; transition: color 0.3s, border-color 0.3s;}
+        
         #profile-open-btn { right: 15px; }
         #settings-btn { right: 75px; }
         #feed-btn { right: 135px; }
+        #weather-widget { right: 195px; min-width: 60px; pointer-events: none; font-size: 14px; color: var(--text-color); border-color: var(--border-color);}
 
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
-        .modal-content h2, .modal-content h3 { color: var(--accent-color); }
+        .modal-content h2, .modal-content h3 { color: var(--accent-color); transition: color 0.3s;}
         .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
         .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; }
         
@@ -82,6 +96,7 @@
             #profile-open-btn { right: 10px; }
             #settings-btn { right: 65px; }
             #feed-btn { right: 120px; }
+            #weather-widget { right: 175px; }
 
             #bottom-panel { padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); bottom: 10px; left: 10px; right: 10px; }
             .status-badge { font-size: 16px; width: 90%; }
@@ -146,8 +161,7 @@
     <div id="my-hides-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h2 style="margin-top:0; text-align: center;">My Active Caches</h2>
-            <div id="my-hides-list" style="max-height: 40vh; overflow-y: auto; margin-bottom: 15px;">
-                </div>
+            <div id="my-hides-list" style="max-height: 40vh; overflow-y: auto; margin-bottom: 15px;"></div>
             <button class="action-btn close-btn" onclick="closeModal('my-hides-modal')">Close</button>
         </div>
     </div>
@@ -173,7 +187,13 @@
         <div class="modal-content glass">
             <h2 style="margin-top:0; text-align: center;">Settings</h2>
             
-            <label style="font-size: 13px; color: var(--accent-color);">Map Theme</label>
+            <div class="setting-row" style="border-bottom:none; margin-bottom: 5px;">
+                <span style="font-weight:bold; color:var(--accent-color);">Dynamic Weather Theme ☀️⛈️</span> 
+                <input type="checkbox" id="set-dynamic-weather" onchange="saveSettings()">
+            </div>
+            <p style="font-size: 11px; margin-top:0; opacity:0.8;">Map automatically adapts to real-world weather and day/night cycle.</p>
+
+            <label style="font-size: 13px; color: var(--accent-color); margin-top:10px; display:block;">Manual Map Theme (If Dynamic is OFF)</label>
             <select id="set-map-theme" onchange="saveSettings()">
                 <option value="dark">Midnight (Dark)</option>
                 <option value="light">Daylight (Light)</option>
@@ -258,6 +278,9 @@
     <button id="settings-btn" class="top-btn" onclick="openModal('settings-modal')">⚙️</button>
     <button id="feed-btn" class="top-btn" onclick="openFeed()">🔔</button>
     <button id="profile-open-btn" class="top-btn" onclick="openProfile()">👤</button>
+    
+    <div id="weather-widget" class="top-btn glass">🌤️ Sync...</div>
+    
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
     
     <button id="center-map-btn" onclick="centerMap()" title="Center Map on Me">🎯</button>
@@ -274,10 +297,9 @@
         <button id="claim-button" class="action-btn">LOG VISIT</button>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // ==========================================
-        // UI HELPERS (SweetAlert2)
+        // UI HELPERS (SweetAlert2 & Confetti)
         // ==========================================
         const popupAlert = (title, text, icon) => {
             Swal.fire({ title, text, icon, background: 'var(--glass-bg)', color: 'var(--text-color)', confirmButtonColor: 'var(--accent-color)', backdrop: 'rgba(0,0,0,0.6)' });
@@ -299,28 +321,38 @@
         let alertedCaches = new Set(); 
         let selectedManageCache = null; 
 
-        // NEW: Avatar and Icon Variables
         let myAvatar = localStorage.getItem('geocatcher_avatar') || '👦';
         let myMarker = localStorage.getItem('geocatcher_marker') || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
 
+        // NEW: Dynamic Weather Defaults to TRUE
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
-            theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
+            theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false, dynamicWeather: true
         };
+
+        let lastWeatherObj = null;
+        let lastWeatherFetch = 0;
 
         const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
         L.control.zoom({ position: 'topleft' }).addTo(map);
         
         function applySettings() {
+            // First clear all custom weather CSS classes
+            document.body.classList.remove('light-mode', 'theme-heat', 'theme-rain', 'theme-storm');
             if (mapTileLayer) map.removeLayer(mapTileLayer);
-            if (appSettings.theme === 'light') {
-                document.body.classList.add('light-mode');
-                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
-            } else if (appSettings.theme === 'satellite') {
-                document.body.classList.remove('light-mode');
-                mapTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+
+            // NEW: If Dynamic Weather is ON and we have weather data, let it control the theme!
+            if (appSettings.dynamicWeather && lastWeatherObj) {
+                applyDynamicTheme(lastWeatherObj);
             } else {
-                document.body.classList.remove('light-mode');
-                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                // Manual Fallback Logic
+                if (appSettings.theme === 'light') {
+                    document.body.classList.add('light-mode');
+                    mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+                } else if (appSettings.theme === 'satellite') {
+                    mapTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+                } else {
+                    mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+                }
             }
 
             const audioEl = document.getElementById('bg-music');
@@ -334,6 +366,7 @@
             document.getElementById('set-battery').checked = appSettings.battery;
             document.getElementById('set-units').checked = appSettings.units;
             document.getElementById('set-ghost').checked = appSettings.ghost;
+            document.getElementById('set-dynamic-weather').checked = appSettings.dynamicWeather;
 
             if (!appSettings.radar && radarCircle) { map.removeLayer(radarCircle); radarCircle = null; }
             startGPS();
@@ -348,12 +381,12 @@
             appSettings.battery = document.getElementById('set-battery').checked;
             appSettings.units = document.getElementById('set-units').checked;
             appSettings.ghost = document.getElementById('set-ghost').checked;
+            appSettings.dynamicWeather = document.getElementById('set-dynamic-weather').checked;
             
             localStorage.setItem('geocatcher_settings', JSON.stringify(appSettings));
             applySettings();
         }
 
-        // NEW: Save Player Customization
         function saveCustomization() {
             myAvatar = document.getElementById('select-avatar').value;
             myMarker = document.getElementById('select-marker').value;
@@ -381,6 +414,47 @@
         }
 
         // ==========================================
+        // NEW: LIVE WEATHER & DYNAMIC MAPS ENGINE
+        // ==========================================
+        function updateWeather(lat, lng) {
+            const now = Date.now();
+            if (now - lastWeatherFetch < 300000) return; // Only fetch every 5 mins to save data
+            lastWeatherFetch = now;
+            
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
+            .then(r => r.json()).then(data => {
+                const w = data.current_weather;
+                lastWeatherObj = w;
+                
+                let emoji = '☀️'; // Clear
+                if(w.weathercode > 0) emoji = '⛅'; // Cloudy
+                if(w.weathercode > 50) emoji = '🌧️'; // Rain
+                if(w.weathercode > 90) emoji = '⛈️'; // Storm
+                
+                document.getElementById('weather-widget').innerText = `${emoji} ${Math.round(w.temperature)}°C`;
+                
+                if (appSettings.dynamicWeather) {
+                    applySettings(); // Re-trigger settings to apply dynamic CSS
+                }
+            }).catch(e => console.log("Weather error: ", e));
+        }
+
+        function applyDynamicTheme(w) {
+            // Day or Night Base Map
+            if (w.is_day === 1) {
+                document.body.classList.add('light-mode');
+                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+            } else {
+                mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+            }
+
+            // Extreme Weather CSS Overlays
+            if (w.temperature >= 38) document.body.classList.add('theme-heat'); // Bikaner Summer Mode!
+            else if (w.weathercode > 50 && w.weathercode < 90) document.body.classList.add('theme-rain');
+            else if (w.weathercode >= 90) document.body.classList.add('theme-storm');
+        }
+
+        // ==========================================
         // DATA & GPS LOGIC
         // ==========================================
         function loadTreasures() {
@@ -395,7 +469,6 @@
                     if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
                     if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
                     
-                    // NEW: Use the creator's chosen custom icon, or fallback to the standard chest
                     const iconUrl = t.marker_url || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
                     const customIcon = L.icon({
                         iconUrl: iconUrl,
@@ -448,11 +521,12 @@
             }
         }
 
-        // NEW: Open Google Street View
+        // NEW: Fixed Street View Link (No more Google Maps app hijacking)
         function openStreetView() {
             if (currentLat !== 0 && currentLng !== 0) {
                 playSFX();
-                window.open(`https://www.google.com/maps?layer=c&cbll=${currentLat},${currentLng}`, '_blank');
+                const streetViewUrl = `https://www.google.com/maps?layer=c&cbll=${currentLat},${currentLng}`;
+                window.open(streetViewUrl, '_blank');
             } else {
                 popupAlert('No GPS Signal', 'Wait for satellite lock before opening Street View.', 'warning');
             }
@@ -465,6 +539,8 @@
 
                 gpsWatcher = navigator.geolocation.watchPosition((position) => {
                     currentLat = position.coords.latitude; currentLng = position.coords.longitude;
+                    
+                    updateWeather(currentLat, currentLng); // Ping the weather API in the background
 
                     if (!userMarker) {
                         userMarker = L.circleMarker([currentLat, currentLng], { color: '#00ff00', fillColor: '#00ff00', fillOpacity: 1, radius: 8, weight: 3 }).addTo(map);
@@ -514,16 +590,15 @@
                             }
                             if(statusBadge.className !== "status-badge burning") playSFX(); 
                             
-                            // NEW: Hide button entirely on the main screen if you are the creator!
                             if (closestTreasure.creator === myUsername) {
                                 statusBadge.innerText = "YOUR CACHE";
-                                statusBadge.className = "status-badge warm"; // Less aggressive color
-                                claimBtn.style.display = "none"; // Hide button
+                                statusBadge.className = "status-badge warm"; 
+                                claimBtn.style.display = "none"; 
                             } else {
                                 statusBadge.innerText = "BURNING HOT!"; 
                                 statusBadge.className = "status-badge burning"; 
                                 claimBtn.innerText = "LOG VISIT";
-                                claimBtn.style.display = "block"; // Show button for others
+                                claimBtn.style.display = "block"; 
                             }
                         } 
                         else {
@@ -583,14 +658,12 @@
 
             fetch('/api/claim', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    username: myUsername, 
-                    treasure_id: closestTreasure.id, 
-                    review: reviewText,
-                    difficulty: diffRating
-                })
+                body: JSON.stringify({ username: myUsername, treasure_id: closestTreasure.id, review: reviewText, difficulty: diffRating })
             }).then(res => res.json()).then(data => {
                 if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
+                
+                // NEW: Confetti Cannon Explosion on successful claim!
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
                 
                 popupAlert('🎉 Treasure Found!', 'Review saved. You earned +10 XP!', 'success');
                 map.removeLayer(closestTreasure.marker);
@@ -654,8 +727,6 @@
             formData.append('lat', currentLat); formData.append('lng', currentLng);
             formData.append('title', title); formData.append('description', desc);
             formData.append('creator', myUsername);
-            
-            // NEW: Send the player's chosen custom marker to the database!
             formData.append('marker_url', myMarker);
 
             if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
@@ -685,7 +756,6 @@
         function openProfile() {
             if(!myUsername) return;
             
-            // Set the dropdowns to the player's saved choices
             document.getElementById('select-avatar').value = myAvatar;
             document.getElementById('select-marker').value = myMarker;
             document.getElementById('profile-name').innerText = `${myAvatar} ${myUsername}'s Profile`;
