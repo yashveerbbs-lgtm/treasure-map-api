@@ -69,6 +69,7 @@
         .popup-title { font-size: 16px; font-weight: bold; color: var(--accent-color); margin: 0; }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
+        #streetview-container { width: 100%; height: 60vh; border-radius: 12px; background: #222; margin-top: 10px; border: 1px solid var(--border-color); }
         @media (max-width: 600px) {
             #top-panel { width: 130px; padding: 10px; top: 10px; left: 10px; max-height: 90px; }
             .header-title { font-size: 12px; margin-bottom: 5px; }
@@ -85,6 +86,7 @@
             #center-map-btn { bottom: 130px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             #street-view-btn { bottom: 185px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             .modal-content { width: 92%; padding: 20px; }
+            #streetview-container { height: 65vh; }
         }
     </style>
 </head>
@@ -98,6 +100,14 @@
             <h2>Welcome to Geocatcher</h2>
             <input type="text" id="username-input" placeholder="Enter Explorer Name">
             <button class="action-btn" onclick="login()">Start Exploring</button>
+        </div>
+    </div>
+
+    <div id="streetview-modal" class="modal-overlay">
+        <div class="modal-content glass" style="max-width: 600px; width: 90%;">
+            <h3 style="margin-top: 0; text-align: center; color: var(--accent-color);">🛣️ In-App Street View</h3>
+            <div id="streetview-container"></div>
+            <button class="close-btn" onclick="closeModal('streetview-modal')">Return to Map</button>
         </div>
     </div>
 
@@ -185,7 +195,8 @@
             <label style="font-size: 13px; color: var(--accent-color);">Background Music</label>
             <select id="set-music" onchange="saveSettings()">
                 <option value="none">Muted</option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Ambient Exploration</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Ambient Track 1</option>
+                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3">Ambient Track 2</option>
             </select>
 
             <div class="setting-row"><span>Enable SFX & Vibration</span> <input type="checkbox" id="set-sfx" onchange="saveSettings()"></div>
@@ -287,11 +298,11 @@
         let alertedCaches = new Set(); 
         let selectedManageCache = null; 
         let currentRadarState = "freezing";
+        let googleMapsLoaded = false;
 
         let myAvatar = localStorage.getItem('geocatcher_avatar') || '👦';
         let myMarker = localStorage.getItem('geocatcher_marker') || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
         
-        // --- TITLE SYSTEM VARIABLES ---
         let myTitle = localStorage.getItem('geocatcher_title') || '';
         let unlockedTitles = JSON.parse(localStorage.getItem('geocatcher_unlocked_titles')) || ['Explorer', 'Novice'];
 
@@ -500,15 +511,56 @@
             } else { popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info'); }
         }
 
-        // --- FIXED: NATIVE STREET VIEW (NO GOOGLE API ERRORS) ---
+        // RESTORED: INBUILT STREET VIEW ENGINE (USING YOUR API KEY)
         function openStreetView() {
-            triggerHapticPattern('click');
-            if (currentLat === 0 || currentLng === 0) {
-                popupAlert('GPS Searching', 'Wait for GPS signal to lock...', 'warning');
+            let lat = currentLat;
+            let lng = currentLng;
+
+            if (lat === 0 || lng === 0) {
+                popupAlert('No Signal', 'Wait for GPS satellite synchronization before viewing routes.', 'warning');
                 return;
             }
-            // Forces the device to natively open Google Maps without hitting billing limits
-            window.location.href = `google.navigation:q=${currentLat},${currentLng}&mode=w`;
+            triggerHapticPattern('click');
+            openModal('streetview-modal');
+
+            if (googleMapsLoaded) {
+                initStreetViewPanorama(lat, lng);
+            } else {
+                document.getElementById('streetview-container').innerHTML = `<p style="text-align:center; padding-top:40px; color:#aaa; font-size:14px;">Loading Google Panorama Engine...</p>`;
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDFYu0i0vKzxeDl85uFxJ6CWI6qXRickew&callback=mapsApiCallback`;
+                script.async = true;
+                script.defer = true;
+                window.mapsApiCallback = function() {
+                    googleMapsLoaded = true;
+                    initStreetViewPanorama(lat, lng);
+                };
+                document.head.appendChild(script);
+            }
+        }
+
+        function initStreetViewPanorama(targetLat, targetLng) {
+            const container = document.getElementById('streetview-container');
+            container.innerHTML = ''; 
+            
+            const panorama = new google.maps.StreetViewPanorama(container, {
+                position: { lat: targetLat, lng: targetLng },
+                pov: { heading: 165, pitch: 0 },
+                zoom: 1,
+                visible: true,
+                addressControl: false,
+                showRoadLabels: true
+            });
+
+            panorama.addListener('status_changed', () => {
+                if (panorama.getStatus() !== 'OK') {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding: 40px 20px; color: #ff416c;">
+                            <p style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">📍 No Coverage Available</p>
+                            <p style="font-size: 13px; opacity: 0.8;">Google Street View cars haven't mapped this exact spot yet.</p>
+                        </div>`;
+                }
+            });
         }
 
         function startGPS() {
@@ -777,7 +829,7 @@
             document.getElementById('select-avatar').value = myAvatar;
             document.getElementById('select-marker').value = myMarker;
             
-            populateTitles();
+            populateTitles(); // Refresh the dropdown when profile opens
             const titleDisplay = myTitle ? `[${myTitle}] ` : '';
             document.getElementById('profile-name').innerText = `${myAvatar} ${titleDisplay}${myUsername}'s Profile`;
             
