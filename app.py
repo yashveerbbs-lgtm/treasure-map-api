@@ -1,13 +1,14 @@
 ﻿import os
 import uuid
 import json
+import re
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from supabase import create_client, Client
 from pywebpush import webpush, WebPushException
 
 app = Flask(__name__)
 
-# --- PWA BRIDGE ROUTES (Required for PWABuilder) ---
+# --- PWA BRIDGE ROUTES ---
 @app.route('/manifest.json')
 def serve_manifest():
     return send_from_directory('.', 'manifest.json', mimetype='application/json')
@@ -24,6 +25,12 @@ supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY")
 VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL")
+
+# --- HELPER FUNCTION: FIXES THE SPLIT PROFILE BUG ---
+def get_base_username(name):
+    if not name: return "Unknown"
+    # Removes the "[Title] " part behind the scenes so backend logic works perfectly
+    return re.sub(r'^\[.*?\]\s*', '', name).strip()
 
 @app.route('/')
 def home():
@@ -80,7 +87,6 @@ def handle_treasures():
         marker_url = request.form.get('marker_url', 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png')
         
         image_url = ""
-        # RESTORED: Image Upload Logic
         if 'image' in request.files:
             file = request.files['image']
             if file.filename != '':
@@ -98,18 +104,25 @@ def handle_treasures():
         broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
         return jsonify({"message": "Success"}), 200
 
-# RESTORED: Edit and Delete Caches logic
+# --- FIXED: Edit and Delete Caches Auth Check ---
 @app.route('/api/treasures/<int:t_id>', methods=['PUT', 'DELETE'])
 def manage_treasure(t_id):
     username = request.json.get('username')
     t_res = supabase.table('treasures').select('creator, title').eq('id', t_id).execute()
-    if not t_res.data or t_res.data[0]['creator'] != username:
+    
+    if not t_res.data:
+        return jsonify({"error": "Cache not found"}), 404
+        
+    creator = t_res.data[0]['creator']
+    
+    # Checks the base username (Yashveer.20) instead of the title ([Developer] Yashveer.20)
+    if get_base_username(creator) != get_base_username(username):
         return jsonify({"error": "Unauthorized"}), 403
 
     if request.method == 'DELETE':
         try:
             supabase.table('claims').delete().eq('treasure_id', t_id).execute()
-            del_res = supabase.table('treasures').delete().eq('id', t_id).execute()
+            supabase.table('treasures').delete().eq('id', t_id).execute()
             add_log(username, f"removed their cache: {t_res.data[0]['title']}")
             return jsonify({"status": "deleted"}), 200
         except Exception as e:
@@ -120,7 +133,6 @@ def manage_treasure(t_id):
         supabase.table('treasures').update({"description": new_desc}).eq('id', t_id).execute()
         return jsonify({"status": "updated"}), 200
 
-# RESTORED: Claim tracking with difficulty rating
 @app.route('/api/claim', methods=['POST'])
 def claim_treasure():
     data = request.json
@@ -132,7 +144,8 @@ def claim_treasure():
     t_res = supabase.table('treasures').select('id, title, creator').eq('id', treasure_id).execute()
     if not t_res.data: return jsonify({"error": "Not found in database"}), 404
     
-    if t_res.data[0]['creator'] == username:
+    # Prevent claiming your own cache even if you changed titles
+    if get_base_username(t_res.data[0]['creator']) == get_base_username(username):
         return jsonify({"error": "You cannot claim your own cache!"}), 403
     
     cache_title = t_res.data[0]['title']
@@ -145,7 +158,7 @@ def claim_treasure():
     broadcast_notification("Cache Discovered! 🗺️", f"{username} just found '{cache_title}'!")
     return jsonify({"status": "success"}), 201
 
-# RESTORED: Advanced Leaderboard Math
+# --- FIXED: Combines XP for Profiles with Titles ---
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
     claims_res = supabase.table('claims').select('username').execute()
@@ -153,12 +166,12 @@ def get_leaderboard():
     
     stats = {}
     for item in claims_res.data:
-        u = item['username']
+        u = get_base_username(item['username'])
         stats[u] = stats.get(u, {'found': 0, 'hidden': 0})
         stats[u]['found'] += 1
         
     for item in hides_res.data:
-        u = item['creator']
+        u = get_base_username(item['creator'])
         stats[u] = stats.get(u, {'found': 0, 'hidden': 0})
         stats[u]['hidden'] += 1
 
@@ -170,14 +183,17 @@ def get_leaderboard():
     leaderboard.sort(key=lambda x: x['score'], reverse=True)
     return jsonify(leaderboard), 200
 
-# RESTORED: Profile Badges Logic
+# --- FIXED: Profile Stats Combines Properly ---
 @app.route('/api/profile/<username>', methods=['GET'])
 def get_profile(username):
-    found_data = supabase.table('claims').select('id').eq('username', username).execute().data
-    hidden_data = supabase.table('treasures').select('id').eq('creator', username).execute().data
+    base_user = get_base_username(username)
     
-    found = len(found_data)
-    hidden = len(hidden_data)
+    claims_res = supabase.table('claims').select('username').execute()
+    hides_res = supabase.table('treasures').select('creator').execute()
+    
+    found = sum(1 for c in claims_res.data if get_base_username(c['username']) == base_user)
+    hidden = sum(1 for h in hides_res.data if get_base_username(h['creator']) == base_user)
+    
     rank = "Master 👑" if (found + hidden*2) > 25 else "Novice 🌱"
     
     badges = []
@@ -188,26 +204,26 @@ def get_profile(username):
 
     return jsonify({"found": found, "hidden": hidden, "rank": rank, "badges": badges}), 200
 
-# RESTORED: Full Friend Request System
 @app.route('/api/friends/<username>', methods=['GET'])
 def get_friends(username):
-    all_f = supabase.table('friends').select('*').or_(f"requester.eq.{username},receiver.eq.{username}").execute().data
-    friends = [f['requester'] if f['receiver'] == username else f['receiver'] for f in all_f if f['status'] == 'accepted']
-    pending = [f['requester'] for f in all_f if f['status'] == 'pending' and f['receiver'] == username]
+    base_user = get_base_username(username)
+    all_f = supabase.table('friends').select('*').or_(f"requester.eq.{base_user},receiver.eq.{base_user}").execute().data
+    friends = [f['requester'] if f['receiver'] == base_user else f['receiver'] for f in all_f if f['status'] == 'accepted']
+    pending = [f['requester'] for f in all_f if f['status'] == 'pending' and f['receiver'] == base_user]
     return jsonify({"friends": friends, "pending": pending}), 200
 
 @app.route('/api/friend/request', methods=['POST'])
 def req():
-    supabase.table('friends').insert({"requester": request.json['requester'], "receiver": request.json['receiver'], "status": "pending"}).execute()
+    supabase.table('friends').insert({"requester": get_base_username(request.json['requester']), "receiver": get_base_username(request.json['receiver']), "status": "pending"}).execute()
     return jsonify({"message": "Sent"}), 200
 
 @app.route('/api/friend/respond', methods=['POST'])
 def res():
     d = request.json
-    if d['action'] == 'accept': supabase.table('friends').update({"status": "accepted"}).eq('requester', d['requester']).eq('receiver', d['receiver']).execute()
-    else: supabase.table('friends').delete().eq('requester', d['requester']).eq('receiver', d['receiver']).execute()
+    if d['action'] == 'accept': supabase.table('friends').update({"status": "accepted"}).eq('requester', get_base_username(d['requester'])).eq('receiver', get_base_username(d['receiver'])).execute()
+    else: supabase.table('friends').delete().eq('requester', get_base_username(d['requester'])).eq('receiver', get_base_username(d['receiver'])).execute()
     return jsonify({"message": "Done"}), 200
 
-# --- SAFE SERVER DEPLOYMENT GUARD ---
+# --- SERVER START GUARD ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
