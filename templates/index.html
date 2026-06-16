@@ -8,6 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2857/2857355.png">
+    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/2857/2857355.png">
     <title>Geocatcher</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -346,7 +347,6 @@
         // DATA & GPS LOGIC
         // ==========================================
         function loadTreasures() {
-            // FIX: The ultimate cache-buster! Appending the exact millisecond forces a fresh download.
             fetch('/api/treasures?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
                 const claimedCaches = JSON.parse(localStorage.getItem('myClaimedCaches')) || [];
                 treasures.forEach(t => { if(t.marker) map.removeLayer(t.marker); });
