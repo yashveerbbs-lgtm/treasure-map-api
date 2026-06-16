@@ -350,7 +350,6 @@
         });
         if (!navigator.onLine) { document.getElementById('offline-banner').style.display = 'block'; }
 
-        // --- NEW HELPER: STRIPS TITLES FOR FRONTEND CHECKS ---
         function getBaseName(fullName) {
             if (!fullName) return "";
             return fullName.replace(/^\[.*?\]\s*/, '').trim();
@@ -646,7 +645,6 @@
                                 alertedCaches.add('hot_' + cacheKey);
                             }
                             
-                            // --- FIXED: USES BASE NAME STRIPPER SO IT DOESN'T GET CONFUSED BY TITLES ---
                             if (getBaseName(closestTreasure.creator) === myUsername) {
                                 statusBadge.innerText = "YOUR CACHE"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none"; 
                             } else {
@@ -729,7 +727,8 @@
             }).then(res => res.json()).then(data => {
                 if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
                 
-                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
+                // CONFFETI Z-INDEX FIXED
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 20000 });
                 triggerHapticPattern('success');
                 popupAlert('🎉 Treasure Found!', 'Review saved. You earned +10 XP!', 'success');
                 
@@ -777,7 +776,6 @@
             closeModal('profile-modal');
             const listDiv = document.getElementById('my-hides-list');
             
-            // --- FIXED: SAFELY CHECKS BASE USERNAME SO BUTTON NEVER CRASHES ---
             const myCaches = treasures.filter(t => getBaseName(t.creator) === myUsername);
             
             if (myCaches.length === 0) {
