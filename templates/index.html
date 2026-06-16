@@ -41,6 +41,9 @@
         #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        
+        /* NEW: Street View Button */
+        #street-view-btn { position: absolute; bottom: 210px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
 
         .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
         #profile-open-btn { right: 15px; }
@@ -48,7 +51,7 @@
         #feed-btn { right: 135px; }
 
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
-        .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 80vh; overflow-y: auto;}
+        .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
         .modal-content h2, .modal-content h3 { color: var(--accent-color); }
         .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
         .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; }
@@ -84,6 +87,7 @@
             .status-badge { font-size: 16px; width: 90%; }
             #add-btn { width: 65px; height: 65px; bottom: 130px; right: 15px; font-size: 35px; }
             #center-map-btn { bottom: 130px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
+            #street-view-btn { bottom: 185px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             .modal-content { width: 92%; padding: 20px; }
         }
     </style>
@@ -197,8 +201,33 @@
 
     <div id="profile-modal" class="modal-overlay">
         <div class="modal-content glass">
-            <h2 id="profile-name" style="margin-top:0; text-align: center;">My Profile</h2>
+            <h2 id="profile-name" style="margin-top:0; text-align: center;">👦 My Profile</h2>
             
+            <h3 style="margin-bottom: 5px; margin-top: -10px;">Customize Profile</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: var(--accent-color);">My Avatar</label>
+                    <select id="select-avatar" onchange="saveCustomization()" style="width: 100%; padding: 8px; border-radius: 5px; background: var(--input-bg); color: #fff; border: 1px solid var(--border-color);">
+                        <option value="👦">👦 Boy</option>
+                        <option value="👧">👧 Girl</option>
+                        <option value="🐱">🐱 Cat</option>
+                        <option value="🤖">🤖 Cyborg</option>
+                        <option value="👽">👽 Alien</option>
+                        <option value="🧙‍♂️">🧙‍♂️ Wizard</option>
+                        <option value="🥷">🥷 Ninja</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 11px; color: var(--accent-color);">My Cache Icon</label>
+                    <select id="select-marker" onchange="saveCustomization()" style="width: 100%; padding: 8px; border-radius: 5px; background: var(--input-bg); color: #fff; border: 1px solid var(--border-color);">
+                        <option value="https://cdn-icons-png.flaticon.com/512/3175/3175218.png">🏴‍☠️ Chest</option>
+                        <option value="https://cdn-icons-png.flaticon.com/512/1051/1051262.png">💎 Gem</option>
+                        <option value="https://cdn-icons-png.flaticon.com/512/751/751463.png">🏺 Relic</option>
+                        <option value="https://cdn-icons-png.flaticon.com/512/1037/1037303.png">🎁 Box</option>
+                    </select>
+                </div>
+            </div>
+
             <div id="profile-badges" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center;"></div>
             
             <div class="profile-stat"><span>Rank:</span> <strong id="profile-rank">Loading...</strong></div>
@@ -232,6 +261,7 @@
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
     
     <button id="center-map-btn" onclick="centerMap()" title="Center Map on Me">🎯</button>
+    <button id="street-view-btn" onclick="openStreetView()" title="Open Street View">🛣️</button>
 
     <div id="top-panel" class="glass" onclick="openModal('leaderboard-modal')" title="Click for Full Rankings">
         <h3 class="header-title">🏆 Top Explorers</h3>
@@ -258,11 +288,6 @@
             timerProgressBar: true, background: 'var(--glass-bg)', color: 'var(--text-color)'
         });
 
-        const treasureIcon = L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png', 
-            iconSize: [45, 45], iconAnchor: [22, 45], popupAnchor: [0, -40]
-        });
-
         // ==========================================
         // VARIABLES & INITIALIZATION
         // ==========================================
@@ -272,8 +297,11 @@
         let userMarker = null; let radarCircle = null;
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
         let alertedCaches = new Set(); 
-        
         let selectedManageCache = null; 
+
+        // NEW: Avatar and Icon Variables
+        let myAvatar = localStorage.getItem('geocatcher_avatar') || '👦';
+        let myMarker = localStorage.getItem('geocatcher_marker') || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
 
         let appSettings = JSON.parse(localStorage.getItem('geocatcher_settings')) || {
             theme: 'dark', music: 'none', sfx: true, radar: true, battery: false, units: false, ghost: false
@@ -325,6 +353,15 @@
             applySettings();
         }
 
+        // NEW: Save Player Customization
+        function saveCustomization() {
+            myAvatar = document.getElementById('select-avatar').value;
+            myMarker = document.getElementById('select-marker').value;
+            localStorage.setItem('geocatcher_avatar', myAvatar);
+            localStorage.setItem('geocatcher_marker', myMarker);
+            document.getElementById('profile-name').innerText = `${myAvatar} ${myUsername}'s Profile`;
+        }
+
         function playSFX() { if (appSettings.sfx && navigator.vibrate) navigator.vibrate(50); }
 
         applySettings();
@@ -357,7 +394,15 @@
                     if (t.creator) popupHTML += `<span style="font-size:11px; opacity: 0.7;">Hidden by: ${t.creator}</span>`;
                     if (t.image_url) popupHTML += `<img src="${t.image_url}" class="popup-img">`;
                     if (t.description) popupHTML += `<p class="popup-desc">${t.description}</p>`;
-                    t.marker = L.marker([t.lat, t.lng], { icon: treasureIcon }).addTo(map).bindPopup(popupHTML);
+                    
+                    // NEW: Use the creator's chosen custom icon, or fallback to the standard chest
+                    const iconUrl = t.marker_url || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
+                    const customIcon = L.icon({
+                        iconUrl: iconUrl,
+                        iconSize: [45, 45], iconAnchor: [22, 45], popupAnchor: [0, -40]
+                    });
+
+                    t.marker = L.marker([t.lat, t.lng], { icon: customIcon }).addTo(map).bindPopup(popupHTML);
                 });
             });
         }
@@ -400,6 +445,16 @@
                 playSFX();
             } else {
                 popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info');
+            }
+        }
+
+        // NEW: Open Google Street View
+        function openStreetView() {
+            if (currentLat !== 0 && currentLng !== 0) {
+                playSFX();
+                window.open(`https://www.google.com/maps?layer=c&cbll=${currentLat},${currentLng}`, '_blank');
+            } else {
+                popupAlert('No GPS Signal', 'Wait for satellite lock before opening Street View.', 'warning');
             }
         }
 
@@ -458,16 +513,18 @@
                                 playSFX();
                             }
                             if(statusBadge.className !== "status-badge burning") playSFX(); 
-                            statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; 
                             
+                            // NEW: Hide button entirely on the main screen if you are the creator!
                             if (closestTreasure.creator === myUsername) {
-                                claimBtn.innerText = "MANAGE CACHE";
-                                claimBtn.style.background = "linear-gradient(135deg, #ff9800, #f44336)";
+                                statusBadge.innerText = "YOUR CACHE";
+                                statusBadge.className = "status-badge warm"; // Less aggressive color
+                                claimBtn.style.display = "none"; // Hide button
                             } else {
+                                statusBadge.innerText = "BURNING HOT!"; 
+                                statusBadge.className = "status-badge burning"; 
                                 claimBtn.innerText = "LOG VISIT";
-                                claimBtn.style.background = ""; 
+                                claimBtn.style.display = "block"; // Show button for others
                             }
-                            claimBtn.style.display = "block";
                         } 
                         else {
                             statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
@@ -485,15 +542,9 @@
             if (!closestTreasure) return;
             playSFX();
             
-            if (closestTreasure.creator === myUsername) {
-                selectedManageCache = closestTreasure; 
-                document.getElementById('edit-cache-desc').value = closestTreasure.description || '';
-                openModal('manage-modal');
-            } else {
-                document.getElementById('review-text').value = '';
-                document.getElementById('review-difficulty').value = '3';
-                openModal('review-modal');
-            }
+            document.getElementById('review-text').value = '';
+            document.getElementById('review-difficulty').value = '3';
+            openModal('review-modal');
         });
 
         function openMyHides() {
@@ -603,6 +654,10 @@
             formData.append('lat', currentLat); formData.append('lng', currentLng);
             formData.append('title', title); formData.append('description', desc);
             formData.append('creator', myUsername);
+            
+            // NEW: Send the player's chosen custom marker to the database!
+            formData.append('marker_url', myMarker);
+
             if (imgInput.files.length > 0) { formData.append('image', imgInput.files[0]); }
 
             fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
@@ -629,7 +684,12 @@
         // ==========================================
         function openProfile() {
             if(!myUsername) return;
-            document.getElementById('profile-name').innerText = myUsername + "'s Profile";
+            
+            // Set the dropdowns to the player's saved choices
+            document.getElementById('select-avatar').value = myAvatar;
+            document.getElementById('select-marker').value = myMarker;
+            document.getElementById('profile-name').innerText = `${myAvatar} ${myUsername}'s Profile`;
+            
             openModal('profile-modal');
             
             fetch('/api/profile/' + myUsername).then(r => r.json()).then(data => {
