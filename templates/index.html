@@ -350,6 +350,12 @@
         });
         if (!navigator.onLine) { document.getElementById('offline-banner').style.display = 'block'; }
 
+        // --- NEW HELPER: STRIPS TITLES FOR FRONTEND CHECKS ---
+        function getBaseName(fullName) {
+            if (!fullName) return "";
+            return fullName.replace(/^\[.*?\]\s*/, '').trim();
+        }
+
         function triggerHapticPattern(patternType) {
             if (!appSettings.sfx || !navigator.vibrate) return;
             if (patternType === 'click') navigator.vibrate(40);
@@ -531,7 +537,6 @@
             } else { popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info'); }
         }
 
-        // RESTORED: INBUILT STREET VIEW ENGINE (USING YOUR API KEY)
         function openStreetView() {
             let lat = currentLat;
             let lng = currentLng;
@@ -641,7 +646,8 @@
                                 alertedCaches.add('hot_' + cacheKey);
                             }
                             
-                            if (closestTreasure.creator === myUsername || (myTitle && closestTreasure.creator.includes(`[${myTitle}] ${myUsername}`))) {
+                            // --- FIXED: USES BASE NAME STRIPPER SO IT DOESN'T GET CONFUSED BY TITLES ---
+                            if (getBaseName(closestTreasure.creator) === myUsername) {
                                 statusBadge.innerText = "YOUR CACHE"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none"; 
                             } else {
                                 statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; 
@@ -771,8 +777,8 @@
             closeModal('profile-modal');
             const listDiv = document.getElementById('my-hides-list');
             
-            // Allow managing if the username matches exactly OR is inside a title bracket
-            const myCaches = treasures.filter(t => t.creator === myUsername || t.creator.includes(`] ${myUsername}`));
+            // --- FIXED: SAFELY CHECKS BASE USERNAME SO BUTTON NEVER CRASHES ---
+            const myCaches = treasures.filter(t => getBaseName(t.creator) === myUsername);
             
             if (myCaches.length === 0) {
                 listDiv.innerHTML = "<p style='text-align:center; font-size:14px;'>You haven't hidden any caches yet!</p>";
