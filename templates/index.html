@@ -40,7 +40,6 @@
         .action-btn { background: linear-gradient(135deg, #00e676, #1de9b6); color: #000; border: none; padding: 12px 25px; font-size: 16px; font-weight: bold; border-radius: 20px; cursor: pointer; width: 100%; text-transform: uppercase; margin-top: 5px; box-shadow: 0 4px 15px rgba(0, 230, 118, 0.4); min-height: 48px; }
 
         #top-panel { position: absolute; top: 15px; left: 15px; width: 200px; border-radius: 20px; padding: 15px; max-height: 120px; overflow-y: auto; z-index: 1000; cursor: pointer; }
-        #top-panel:hover { border-color: var(--accent-color); }
         .header-title { margin: 0 0 10px 0; font-size: 14px; color: var(--accent-color); text-transform: uppercase; }
         #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.6; }
 
@@ -51,25 +50,23 @@
         .burning { background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white; animation: pulse 1s infinite; }
         #claim-button { display: none; margin-top: 15px; }
 
-        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.3s; }
+        #add-btn { position: absolute; bottom: 150px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-color); color: #000; font-size: 30px; font-weight: bold; border: none; z-index: 1000; box-shadow: 0 4px 15px rgba(100,255,218,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         #center-map-btn { position: absolute; bottom: 150px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         #street-view-btn { position: absolute; bottom: 210px; left: 20px; width: 50px; height: 50px; border-radius: 50%; background: var(--glass-bg); color: var(--text-color); font-size: 24px; border: 1px solid var(--border-color); z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
 
-        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; transition: color 0.3s, border-color 0.3s;}
+        .top-btn { position: absolute; top: 15px; padding: 10px 15px; border-radius: 20px; background: var(--glass-bg); color: var(--accent-color); border: 1px solid var(--accent-color); font-weight: bold; z-index: 1000; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); backdrop-filter: blur(10px); min-height: 44px; display: flex; align-items: center; justify-content: center; }
         
         #profile-open-btn { right: 15px; }
         #settings-btn { right: 75px; }
         #feed-btn { right: 135px; }
         #weather-widget { right: 195px; min-width: 60px; pointer-events: none; font-size: 14px; color: var(--text-color); border-color: var(--border-color);}
 
-        /* Offline Alert System Styles */
         #offline-banner { position: absolute; top: 75px; left: 50%; transform: translateX(-50%); z-index: 4000; width: 85%; max-width: 340px; padding: 10px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: bold; background: rgba(255, 65, 108, 0.9); color: white; display: none; box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4); border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
 
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
-        .modal-content h2, .modal-content h3 { color: var(--accent-color); transition: color 0.3s;}
         .modal-content input[type="text"], .modal-content textarea, .modal-content select { width: 100%; padding: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; font-family: inherit; background: var(--input-bg); color: var(--text-color);}
-        .close-btn { background: #ff416c; margin-top: 10px; color: white; box-shadow: none; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase;}
+        .close-btn { background: #ff416c; margin-top: 10px; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; text-transform: uppercase;}
         
         .profile-stat { display: flex; justify-content: space-between; background: var(--input-bg); padding: 10px; border-radius: 8px; margin-bottom: 5px; }
         .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;}
@@ -87,6 +84,8 @@
         .popup-title { font-size: 16px; font-weight: bold; color: var(--accent-color); margin: 0; }
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
+
+        #streetview-container { width: 100%; height: 60vh; border-radius: 12px; background: #222; margin-top: 10px; border: 1px solid var(--border-color); }
 
         @media (max-width: 600px) {
             #top-panel { width: 130px; padding: 10px; top: 10px; left: 10px; max-height: 90px; }
@@ -106,6 +105,7 @@
             #center-map-btn { bottom: 130px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             #street-view-btn { bottom: 185px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             .modal-content { width: 92%; padding: 20px; }
+            #streetview-container { height: 65vh; }
         }
     </style>
 </head>
@@ -119,6 +119,14 @@
             <h2>Welcome to Geocatcher</h2>
             <input type="text" id="username-input" placeholder="Enter Explorer Name">
             <button class="action-btn" onclick="login()">Start Exploring</button>
+        </div>
+    </div>
+
+    <div id="streetview-modal" class="modal-overlay">
+        <div class="modal-content glass" style="max-width: 600px; width: 90%;">
+            <h3 style="margin-top: 0; text-align: center; color: var(--accent-color);">🛣️ In-App Street View</h3>
+            <div id="streetview-container"></div>
+            <button class="close-btn" onclick="closeModal('streetview-modal')">Return to Map</button>
         </div>
     </div>
 
@@ -190,14 +198,13 @@
     <div id="settings-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h2 style="margin-top:0; text-align: center;">Settings</h2>
-            
             <div class="setting-row" style="border-bottom:none; margin-bottom: 5px;">
                 <span style="font-weight:bold; color:var(--accent-color);">Dynamic Weather Theme ☀️⛈️</span> 
                 <input type="checkbox" id="set-dynamic-weather" onchange="saveSettings()">
             </div>
             <p style="font-size: 11px; margin-top:0; opacity:0.8;">Map automatically adapts to real-world weather and day/night cycle.</p>
 
-            <label style="font-size: 13px; color: var(--accent-color); margin-top:10px; display:block;">Manual Map Theme (If Dynamic is OFF)</label>
+            <label style="font-size: 13px; color: var(--accent-color); margin-top:10px; display:block;">Manual Map Theme</label>
             <select id="set-map-theme" onchange="saveSettings()">
                 <option value="dark">Midnight (Dark)</option>
                 <option value="light">Daylight (Light)</option>
@@ -208,8 +215,6 @@
             <select id="set-music" onchange="saveSettings()">
                 <option value="none">Muted</option>
                 <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3">Ambient Exploration</option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3">Epic Adventure</option>
-                <option value="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3">Retro Arcade</option>
             </select>
 
             <div class="setting-row"><span>Enable SFX & Vibration</span> <input type="checkbox" id="set-sfx" onchange="saveSettings()"></div>
@@ -226,19 +231,13 @@
     <div id="profile-modal" class="modal-overlay">
         <div class="modal-content glass">
             <h2 id="profile-name" style="margin-top:0; text-align: center;">👦 My Profile</h2>
-            
             <h3 style="margin-bottom: 5px; margin-top: -10px;">Customize Profile</h3>
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <div style="flex: 1;">
                     <label style="font-size: 11px; color: var(--accent-color);">My Avatar</label>
                     <select id="select-avatar" onchange="saveCustomization()" style="width: 100%; padding: 8px; border-radius: 5px; background: var(--input-bg); color: #fff; border: 1px solid var(--border-color);">
-                        <option value="👦">👦 Boy</option>
-                        <option value="👧">👧 Girl</option>
-                        <option value="🐱">🐱 Cat</option>
-                        <option value="🤖">🤖 Cyborg</option>
-                        <option value="👽">👽 Alien</option>
-                        <option value="🧙‍♂️">🧙‍♂️ Wizard</option>
-                        <option value="🥷">🥷 Ninja</option>
+                        <option value="👦">👦 Boy</option><option value="👧">👧 Girl</option><option value="🐱">🐱 Cat</option>
+                        <option value="🤖">🤖 Cyborg</option><option value="👽">👽 Alien</option><option value="🥷">🥷 Ninja</option>
                     </select>
                 </div>
                 <div style="flex: 1;">
@@ -247,33 +246,25 @@
                         <option value="https://cdn-icons-png.flaticon.com/512/3175/3175218.png">🏴‍☠️ Chest</option>
                         <option value="https://cdn-icons-png.flaticon.com/512/1051/1051262.png">💎 Gem</option>
                         <option value="https://cdn-icons-png.flaticon.com/512/751/751463.png">🏺 Relic</option>
-                        <option value="https://cdn-icons-png.flaticon.com/512/1037/1037303.png">🎁 Box</option>
                     </select>
                 </div>
             </div>
 
             <div id="profile-badges" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; justify-content: center;"></div>
-            
             <div class="profile-stat"><span>Rank:</span> <strong id="profile-rank">Loading...</strong></div>
             <div class="profile-stat"><span>Found:</span> <strong id="profile-found">0</strong></div>
             <div class="profile-stat"><span>Hidden:</span> <strong id="profile-hidden">0</strong></div>
-            
             <hr style="border: 1px solid var(--border-color); margin: 15px 0;">
-            
             <button class="action-btn" style="background: linear-gradient(135deg, #ff9800, #f44336); color: white; margin-bottom: 15px;" onclick="openMyHides()">🧰 Manage My Active Caches</button>
-
             <h3 style="margin-bottom: 5px;">Send Friend Request</h3>
             <div style="display: flex; gap: 5px;">
                 <input type="text" id="friend-request-name" placeholder="Friend's Username" style="margin-bottom: 0;">
                 <button class="action-btn" style="width: auto; margin-top: 0;" onclick="sendFriendRequest()">Add</button>
             </div>
-
             <h3 style="margin-bottom: 5px; margin-top: 20px;">Pending Requests</h3>
             <div id="pending-list" style="font-size: 14px;">No pending requests.</div>
-
             <h3 style="margin-bottom: 5px; margin-top: 20px;">My Friends</h3>
             <div id="friends-list" style="font-size: 14px;">No friends added yet.</div>
-
             <button class="close-btn" style="margin-top: 25px;" onclick="closeModal('profile-modal')">Close Profile</button>
         </div>
     </div>
@@ -287,7 +278,7 @@
     
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
     <button id="center-map-btn" onclick="centerMap()" title="Center Map on Me">🎯</button>
-    <button id="street-view-btn" onclick="openStreetView()" title="Open Street View Target">🛣️</button>
+    <button id="street-view-btn" onclick="openStreetView()" title="Open Street View">🛣️</button>
 
     <div id="top-panel" class="glass" onclick="openModal('leaderboard-modal')" title="Click for Full Rankings">
         <h3 class="header-title">🏆 Top Explorers</h3>
@@ -301,13 +292,9 @@
     </div>
 
     <script>
-        // ==========================================
-        // UI HELPERS & GLOBALS
-        // ==========================================
         const popupAlert = (title, text, icon) => {
             Swal.fire({ title, text, icon, background: 'var(--glass-bg)', color: 'var(--text-color)', confirmButtonColor: 'var(--accent-color)', backdrop: 'rgba(0,0,0,0.6)' });
         };
-
         const Toast = Swal.mixin({
             toast: true, position: 'top-end', showConfirmButton: false, timer: 4000,
             timerProgressBar: true, background: 'var(--glass-bg)', color: 'var(--text-color)'
@@ -321,6 +308,7 @@
         let alertedCaches = new Set(); 
         let selectedManageCache = null; 
         let currentRadarState = "freezing";
+        let googleMapsLoaded = false;
 
         let myAvatar = localStorage.getItem('geocatcher_avatar') || '👦';
         let myMarker = localStorage.getItem('geocatcher_marker') || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
@@ -332,15 +320,13 @@
         let lastWeatherObj = null;
         let lastWeatherFetch = 0;
 
-        // ==========================================
-        // INITIALIZE MAP (Safe because Leaflet is in <head>)
-        // ==========================================
-        const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
-        L.control.zoom({ position: 'topleft' }).addTo(map);
+        window.addEventListener('load', () => {
+            map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
+            L.control.zoom({ position: 'topleft' }).addTo(map);
+            applySettings();
+            loadTreasures();
+        });
 
-        // ==========================================
-        // OFFLINE INDICATOR EVENT LISTENERS
-        // ==========================================
         window.addEventListener('online', () => {
             document.getElementById('offline-banner').style.display = 'none';
             loadTreasures();
@@ -351,77 +337,50 @@
         });
         if (!navigator.onLine) { document.getElementById('offline-banner').style.display = 'block'; }
 
-        // ==========================================
-        // ADVANCED HAPTICS PATTERNS ENGINE
-        // ==========================================
         function triggerHapticPattern(patternType) {
             if (!appSettings.sfx || !navigator.vibrate) return;
-            
-            if (patternType === 'click') {
-                navigator.vibrate(40);
-            } else if (patternType === 'warm') {
-                // Heartbeat quick double-pulse [vibe, pause, vibe]
-                navigator.vibrate([100, 70, 100]);
-            } else if (patternType === 'burning') {
-                // Urgent heavy triple-pulse
-                navigator.vibrate([300, 100, 300, 100, 300]);
-            } else if (patternType === 'success') {
-                // Celebration burst cascading up
-                navigator.vibrate([80, 50, 150, 50, 350]);
-            }
+            if (patternType === 'click') navigator.vibrate(40);
+            else if (patternType === 'warm') navigator.vibrate([100, 70, 100]);
+            else if (patternType === 'burning') navigator.vibrate([300, 100, 300, 100, 300]);
+            else if (patternType === 'success') navigator.vibrate([80, 50, 150, 50, 350]);
         }
 
-        // ==========================================
-        // DAILY LOGIN STREAK ENGINE
-        // ==========================================
         function handleDailyStreakXP() {
             const todayStr = new Date().toDateString();
             const lastLoginStr = localStorage.getItem('geocatcher_last_login');
             let streakCount = parseInt(localStorage.getItem('geocatcher_streak_count')) || 0;
 
-            if (lastLoginStr === todayStr) return; // Already checked in today
+            if (lastLoginStr === todayStr) return; 
 
             if (lastLoginStr) {
                 const yesterday = new Date();
                 yesterday.setDate(yesterday.getDate() - 1);
-                if (lastLoginStr === yesterday.toDateString()) {
-                    streakCount += 1; // Kept the streak alive!
-                } else {
-                    streakCount = 1; // Broke streak, resetting
-                }
+                if (lastLoginStr === yesterday.toDateString()) streakCount += 1; 
+                else streakCount = 1; 
             } else {
-                streakCount = 1; // Absolute first login
+                streakCount = 1; 
             }
 
             localStorage.setItem('geocatcher_last_login', todayStr);
             localStorage.setItem('geocatcher_streak_count', streakCount);
 
-            // Award daily login XP scaling up slightly with streak (Caps at +50 XP bonus)
             const baseBonus = 10;
             const streakBonus = Math.min(streakCount * 5, 50);
             const totalDailyXPAward = baseBonus + streakBonus;
 
             setTimeout(() => {
-                Toast.fire({
-                    icon: 'success',
-                    title: `🔥 Daily Login Streak: Day ${streakCount}!`,
-                    text: `Earned +${totalDailyXPAward} Daily Exploration XP!`
-                });
+                Toast.fire({ icon: 'success', title: `🔥 Daily Login Streak: Day ${streakCount}!`, text: `Earned +${totalDailyXPAward} Daily XP!` });
                 triggerHapticPattern('success');
             }, 3000);
         }
 
-        // ==========================================
-        // SETTINGS & THEME LOGIC
-        // ==========================================
         function applySettings() {
             if (!map) return;
             document.body.classList.remove('light-mode', 'theme-heat', 'theme-rain', 'theme-storm');
             if (mapTileLayer) map.removeLayer(mapTileLayer);
 
-            if (appSettings.dynamicWeather && lastWeatherObj) {
-                applyDynamicTheme(lastWeatherObj);
-            } else {
+            if (appSettings.dynamicWeather && lastWeatherObj) applyDynamicTheme(lastWeatherObj);
+            else {
                 if (appSettings.theme === 'light') {
                     document.body.classList.add('light-mode');
                     mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
@@ -459,7 +418,6 @@
             appSettings.units = document.getElementById('set-units').checked;
             appSettings.ghost = document.getElementById('set-ghost').checked;
             appSettings.dynamicWeather = document.getElementById('set-dynamic-weather').checked;
-            
             localStorage.setItem('geocatcher_settings', JSON.stringify(appSettings));
             applySettings();
         }
@@ -491,26 +449,19 @@
             }
         }
 
-        // ==========================================
-        // WEATHER & GPS LOGIC
-        // ==========================================
         function updateWeather(lat, lng) {
             const now = Date.now();
             if (now - lastWeatherFetch < 300000) return; 
             lastWeatherFetch = now;
-            
             fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current_weather=true`)
             .then(r => r.json()).then(data => {
                 const w = data.current_weather;
                 lastWeatherObj = w;
-                
                 let emoji = '☀️'; 
                 if(w.weathercode > 0) emoji = '⛅'; 
                 if(w.weathercode > 50) emoji = '🌧️'; 
                 if(w.weathercode > 90) emoji = '⛈️'; 
-                
                 document.getElementById('weather-widget').innerText = `${emoji} ${Math.round(w.temperature)}°C`;
-                
                 if (appSettings.dynamicWeather) { applySettings(); }
             }).catch(e => console.log("Weather error: ", e));
         }
@@ -522,7 +473,6 @@
             } else {
                 mapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
             }
-
             if (w.temperature >= 38) document.body.classList.add('theme-heat'); 
             else if (w.weathercode > 50 && w.weathercode < 90) document.body.classList.add('theme-rain');
             else if (w.weathercode >= 90) document.body.classList.add('theme-storm');
@@ -532,14 +482,10 @@
             if (currentLat !== 0 && currentLng !== 0 && map) {
                 map.setView([currentLat, currentLng], 17);
                 triggerHapticPattern('click');
-            } else {
-                popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info');
-            }
+            } else { popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info'); }
         }
 
-        // FREE & OPEN SOURCE SYSTEM DEEP-LINK STREET VIEW
         function openStreetView() {
-            // Evaluates user position or checks if there's a nearby cache to lock onto
             let lat = currentLat;
             let lng = currentLng;
 
@@ -552,22 +498,47 @@
                 popupAlert('No Signal', 'Wait for GPS satellite synchronization before viewing routes.', 'warning');
                 return;
             }
-
             triggerHapticPattern('click');
+            openModal('streetview-modal');
 
-            // The universal fallback protocol maps cross-platform to native applications securely
-            const nativeMapsUrl = `google.navigation:q=${lat},${lng}&mode=w`; 
-            const webFallbackUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
+            if (googleMapsLoaded) {
+                initStreetViewPanorama(lat, lng);
+            } else {
+                document.getElementById('streetview-container').innerHTML = `<p style="text-align:center; padding-top:40px; color:#aaa; font-size:14px;">Loading Google Panorama Engine...</p>`;
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDFYu0i0vKzxeDl85uFxJ6CWI6qXRickew&callback=mapsApiCallback`;
+                script.async = true;
+                script.defer = true;
+                window.mapsApiCallback = function() {
+                    googleMapsLoaded = true;
+                    initStreetViewPanorama(lat, lng);
+                };
+                document.head.appendChild(script);
+            }
+        }
 
-            // Try loading Android-native geo URI pattern, fallback to universal secure sandbox tab if it times out
-            const startTime = Date.now();
-            window.location.href = nativeMapsUrl;
+        function initStreetViewPanorama(targetLat, targetLng) {
+            const container = document.getElementById('streetview-container');
+            container.innerHTML = ''; 
+            
+            const panorama = new google.maps.StreetViewPanorama(container, {
+                position: { lat: targetLat, lng: targetLng },
+                pov: { heading: 165, pitch: 0 },
+                zoom: 1,
+                visible: true,
+                addressControl: false,
+                showRoadLabels: true
+            });
 
-            setTimeout(() => {
-                if (Date.now() - startTime < 1500) {
-                    window.open(webFallbackUrl, '_blank', 'noopener,noreferrer');
+            panorama.addListener('status_changed', () => {
+                if (panorama.getStatus() !== 'OK') {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding: 40px 20px; color: #ff416c;">
+                            <p style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">📍 No Coverage Available</p>
+                            <p style="font-size: 13px; opacity: 0.8;">Google Street View cars haven't mapped this exact spot yet.</p>
+                        </div>`;
                 }
-            }, 1000);
+            });
         }
 
         function startGPS() {
@@ -614,10 +585,7 @@
                         const cacheKey = closestTreasure.lat + ',' + closestTreasure.lng;
 
                         if (distanceMeters <= 50 && distanceMeters > 20) {
-                            if (currentRadarState !== "warm") {
-                                triggerHapticPattern('warm');
-                                currentRadarState = "warm";
-                            }
+                            if (currentRadarState !== "warm") { triggerHapticPattern('warm'); currentRadarState = "warm"; }
                             if (!alertedCaches.has('warm_' + cacheKey)) {
                                 Toast.fire({ icon: 'info', title: `Proximity Alert!`, text: `A cache is less than 50m away...` });
                                 alertedCaches.add('warm_' + cacheKey);
@@ -625,24 +593,17 @@
                             statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
                         } 
                         else if (distanceMeters <= 20) {
-                            if (currentRadarState !== "burning") {
-                                triggerHapticPattern('burning');
-                                currentRadarState = "burning";
-                            }
+                            if (currentRadarState !== "burning") { triggerHapticPattern('burning'); currentRadarState = "burning"; }
                             if (!alertedCaches.has('hot_' + cacheKey)) {
                                 Toast.fire({ icon: 'success', title: `BURNING HOT!`, text: `You are standing right on top of it!` });
                                 alertedCaches.add('hot_' + cacheKey);
                             }
                             
                             if (closestTreasure.creator === myUsername) {
-                                statusBadge.innerText = "YOUR CACHE";
-                                statusBadge.className = "status-badge warm"; 
-                                claimBtn.style.display = "none"; 
+                                statusBadge.innerText = "YOUR CACHE"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none"; 
                             } else {
-                                statusBadge.innerText = "BURNING HOT!"; 
-                                statusBadge.className = "status-badge burning"; 
-                                claimBtn.innerText = "LOG VISIT";
-                                claimBtn.style.display = "block"; 
+                                statusBadge.innerText = "BURNING HOT!"; statusBadge.className = "status-badge burning"; 
+                                claimBtn.innerText = "LOG VISIT"; claimBtn.style.display = "block"; 
                             }
                         } 
                         else {
@@ -655,9 +616,6 @@
             }
         }
 
-        // ==========================================
-        // TREASURE LOGIC & SERVER COMM
-        // ==========================================
         function loadTreasures() {
             if (!map) return;
             fetch('/api/treasures?nocache=' + new Date().getTime()).then(res => res.json()).then(data => {
@@ -764,9 +722,6 @@
             });
         }
 
-        // ==========================================
-        // MY HIDES MANAGEMENT
-        // ==========================================
         function openMyHides() {
             closeModal('profile-modal');
             const listDiv = document.getElementById('my-hides-list');
@@ -834,9 +789,6 @@
             });
         }
 
-        // ==========================================
-        // MODALS & PROFILE
-        // ==========================================
         function openModal(id) { document.getElementById(id).style.display = 'flex'; triggerHapticPattern('click'); }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; triggerHapticPattern('click'); }
 
@@ -893,9 +845,6 @@
             .then(() => loadFriends());
         }
 
-        // ==========================================
-        // PUSH NOTIFICATIONS
-        // ==========================================
         function urlBase64ToUint8Array(base64String) {
             const padding = '='.repeat((4 - base64String.length % 4) % 4);
             const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
@@ -928,10 +877,6 @@
                 }
             });
         }
-        
-        // Final bootstrap trigger
-        applySettings();
-        loadTreasures();
     </script>
 </body>
 </html>
