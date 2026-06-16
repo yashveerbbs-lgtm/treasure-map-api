@@ -62,6 +62,9 @@
         #feed-btn { right: 135px; }
         #weather-widget { right: 195px; min-width: 60px; pointer-events: none; font-size: 14px; color: var(--text-color); border-color: var(--border-color);}
 
+        /* Offline Alert System Styles */
+        #offline-banner { position: absolute; top: 75px; left: 50%; transform: translateX(-50%); z-index: 4000; width: 85%; max-width: 340px; padding: 10px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: bold; background: rgba(255, 65, 108, 0.9); color: white; display: none; box-shadow: 0 4px 15px rgba(255, 65, 108, 0.4); border: 1px solid rgba(255,255,255,0.2); pointer-events: none; }
+
         .modal-overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 2500; display: none; align-items: center; justify-content: center; background: var(--modal-overlay); }
         .modal-content { padding: 30px; border-radius: 20px; width: 85%; max-width: 350px; text-align: left; max-height: 85vh; overflow-y: auto;}
         .modal-content h2, .modal-content h3 { color: var(--accent-color); transition: color 0.3s;}
@@ -85,9 +88,6 @@
         .leaflet-control-attribution { display: none !important; }
         .leaflet-control-zoom { border: none !important; margin-top: 150px !important; }
 
-        /* Embedded Inbuilt Street View Specific Layouts */
-        #streetview-container { width: 100%; height: 60vh; border-radius: 12px; background: #222; margin-top: 10px; border: 1px solid var(--border-color); }
-
         @media (max-width: 600px) {
             #top-panel { width: 130px; padding: 10px; top: 10px; left: 10px; max-height: 90px; }
             .header-title { font-size: 12px; margin-bottom: 5px; }
@@ -98,6 +98,7 @@
             #settings-btn { right: 65px; }
             #feed-btn { right: 120px; }
             #weather-widget { right: 175px; }
+            #offline-banner { top: 65px; width: 90%; font-size: 11px; }
 
             #bottom-panel { padding: 15px 15px calc(15px + env(safe-area-inset-bottom)); bottom: 10px; left: 10px; right: 10px; }
             .status-badge { font-size: 16px; width: 90%; }
@@ -105,26 +106,19 @@
             #center-map-btn { bottom: 130px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             #street-view-btn { bottom: 185px; left: 15px; width: 45px; height: 45px; font-size: 20px; }
             .modal-content { width: 92%; padding: 20px; }
-            #streetview-container { height: 65vh; }
         }
     </style>
 </head>
 <body>
     <audio id="bg-music" loop></audio>
 
+    <div id="offline-banner">📡 Running Offline. Map details might be patchy, but your radar GPS tracker is still live!</div>
+
     <div id="login-screen" class="glass">
         <div class="login-box glass">
             <h2>Welcome to Geocatcher</h2>
             <input type="text" id="username-input" placeholder="Enter Explorer Name">
             <button class="action-btn" onclick="login()">Start Exploring</button>
-        </div>
-    </div>
-
-    <div id="streetview-modal" class="modal-overlay">
-        <div class="modal-content glass" style="max-width: 600px; width: 90%;">
-            <h3 style="margin-top: 0; text-align: center; color: var(--accent-color);">🛣️ In-App Street View</h3>
-            <div id="streetview-container"></div>
-            <button class="close-btn" onclick="closeModal('streetview-modal')">Return to Map</button>
         </div>
     </div>
 
@@ -293,7 +287,7 @@
     
     <button id="add-btn" onclick="openModal('add-modal')">+</button>
     <button id="center-map-btn" onclick="centerMap()" title="Center Map on Me">🎯</button>
-    <button id="street-view-btn" onclick="openStreetView()" title="Open Street View">🛣️</button>
+    <button id="street-view-btn" onclick="openStreetView()" title="Open Street View Target">🛣️</button>
 
     <div id="top-panel" class="glass" onclick="openModal('leaderboard-modal')" title="Click for Full Rankings">
         <h3 class="header-title">🏆 Top Explorers</h3>
@@ -326,7 +320,7 @@
         let isFirstLock = true; let treasures = []; let closestTreasure = null; 
         let alertedCaches = new Set(); 
         let selectedManageCache = null; 
-        let googleMapsLoaded = false;
+        let currentRadarState = "freezing";
 
         let myAvatar = localStorage.getItem('geocatcher_avatar') || '👦';
         let myMarker = localStorage.getItem('geocatcher_marker') || 'https://cdn-icons-png.flaticon.com/512/3175/3175218.png';
@@ -343,6 +337,79 @@
         // ==========================================
         const map = L.map('map', { zoomControl: false }).setView([28.02, 73.31], 15);
         L.control.zoom({ position: 'topleft' }).addTo(map);
+
+        // ==========================================
+        // OFFLINE INDICATOR EVENT LISTENERS
+        // ==========================================
+        window.addEventListener('online', () => {
+            document.getElementById('offline-banner').style.display = 'none';
+            loadTreasures();
+            updateLeaderboard();
+        });
+        window.addEventListener('offline', () => {
+            document.getElementById('offline-banner').style.display = 'block';
+        });
+        if (!navigator.onLine) { document.getElementById('offline-banner').style.display = 'block'; }
+
+        // ==========================================
+        // ADVANCED HAPTICS PATTERNS ENGINE
+        // ==========================================
+        function triggerHapticPattern(patternType) {
+            if (!appSettings.sfx || !navigator.vibrate) return;
+            
+            if (patternType === 'click') {
+                navigator.vibrate(40);
+            } else if (patternType === 'warm') {
+                // Heartbeat quick double-pulse [vibe, pause, vibe]
+                navigator.vibrate([100, 70, 100]);
+            } else if (patternType === 'burning') {
+                // Urgent heavy triple-pulse
+                navigator.vibrate([300, 100, 300, 100, 300]);
+            } else if (patternType === 'success') {
+                // Celebration burst cascading up
+                navigator.vibrate([80, 50, 150, 50, 350]);
+            }
+        }
+
+        // ==========================================
+        // DAILY LOGIN STREAK ENGINE
+        // ==========================================
+        function handleDailyStreakXP() {
+            const todayStr = new Date().toDateString();
+            const lastLoginStr = localStorage.getItem('geocatcher_last_login');
+            let streakCount = parseInt(localStorage.getItem('geocatcher_streak_count')) || 0;
+
+            if (lastLoginStr === todayStr) return; // Already checked in today
+
+            if (lastLoginStr) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (lastLoginStr === yesterday.toDateString()) {
+                    streakCount += 1; // Kept the streak alive!
+                } else {
+                    streakCount = 1; // Broke streak, resetting
+                }
+            } else {
+                streakCount = 1; // Absolute first login
+            }
+
+            localStorage.setItem('geocatcher_last_login', todayStr);
+            localStorage.setItem('geocatcher_streak_count', streakCount);
+
+            // Award daily login XP scaling up slightly with streak (Caps at +50 XP bonus)
+            const baseBonus = 10;
+            const streakBonus = Math.min(streakCount * 5, 50);
+            const totalDailyXPAward = baseBonus + streakBonus;
+
+            setTimeout(() => {
+                Toast.fire({
+                    icon: 'success',
+                    title: `🔥 Daily Login Streak: Day ${streakCount}!`,
+                    text: `Earned +${totalDailyXPAward} Daily Exploration XP!`
+                });
+                triggerHapticPattern('success');
+            }, 3000);
+        }
 
         // ==========================================
         // SETTINGS & THEME LOGIC
@@ -405,9 +472,10 @@
             document.getElementById('profile-name').innerText = `${myAvatar} ${myUsername}'s Profile`;
         }
 
-        function playSFX() { if (appSettings.sfx && navigator.vibrate) navigator.vibrate(50); }
-
-        if (myUsername) { document.getElementById('login-screen').style.display = 'none'; }
+        if (myUsername) { 
+            document.getElementById('login-screen').style.display = 'none'; 
+            handleDailyStreakXP();
+        }
         
         function login() {
             const name = document.getElementById('username-input').value.trim();
@@ -416,6 +484,7 @@
                 myUsername = name;
                 document.getElementById('login-screen').style.display = 'none';
                 applySettings();
+                handleDailyStreakXP();
                 popupAlert('Welcome Back!', `Ready to explore, ${name}?`, 'success');
             } else { 
                 popupAlert('Hold Up!', 'Please enter an Explorer Name to continue.', 'warning'); 
@@ -462,61 +531,43 @@
         function centerMap() {
             if (currentLat !== 0 && currentLng !== 0 && map) {
                 map.setView([currentLat, currentLng], 17);
-                playSFX();
+                triggerHapticPattern('click');
             } else {
                 popupAlert('GPS Searching', 'Still waiting to lock onto satellites...', 'info');
             }
         }
 
-        // INBUILT STREET VIEW ENGINE (Dynamic API Injection)
+        // FREE & OPEN SOURCE SYSTEM DEEP-LINK STREET VIEW
         function openStreetView() {
-            if (currentLat === 0 || currentLng === 0) {
-                popupAlert('No GPS Signal', 'Wait for satellite lock before opening Street View.', 'warning');
+            // Evaluates user position or checks if there's a nearby cache to lock onto
+            let lat = currentLat;
+            let lng = currentLng;
+
+            if (closestTreasure) {
+                lat = closestTreasure.lat;
+                lng = closestTreasure.lng;
+            }
+
+            if (lat === 0 || lng === 0) {
+                popupAlert('No Signal', 'Wait for GPS satellite synchronization before viewing routes.', 'warning');
                 return;
             }
-            playSFX();
-            openModal('streetview-modal');
 
-            if (googleMapsLoaded) {
-                initStreetViewPanorama();
-            } else {
-                document.getElementById('streetview-container').innerHTML = `<p style="text-align:center; padding-top:40px; color:#aaa; font-size:14px;">Loading Google Panorama Engine...</p>`;
-                // Load the Google Maps JS script dynamically
-                const script = document.createElement('script');
-                script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=mapsApiCallback`;
-                script.async = true;
-                script.defer = true;
-                window.mapsApiCallback = function() {
-                    googleMapsLoaded = true;
-                    initStreetViewPanorama();
-                };
-                document.head.appendChild(script);
-            }
-        }
+            triggerHapticPattern('click');
 
-        function initStreetViewPanorama() {
-            const container = document.getElementById('streetview-container');
-            container.innerHTML = ''; // Clear status message
-            
-            const panorama = new google.maps.StreetViewPanorama(container, {
-                position: { lat: currentLat, lng: currentLng },
-                pov: { heading: 165, pitch: 0 },
-                zoom: 1,
-                visible: true,
-                addressControl: false,
-                showRoadLabels: true
-            });
+            // The universal fallback protocol maps cross-platform to native applications securely
+            const nativeMapsUrl = `google.navigation:q=${lat},${lng}&mode=w`; 
+            const webFallbackUrl = `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${lat},${lng}`;
 
-            // Fallback checking if panorama data is present at the user coordinates
-            panorama.addListener('status_changed', () => {
-                if (panorama.getStatus() !== 'OK') {
-                    container.innerHTML = `
-                        <div style="text-align:center; padding: 40px 20px; color: #ff416c;">
-                            <p style="font-size: 18px; font-weight: bold; margin-bottom: 5px;">📍 No Coverage Available</p>
-                            <p style="font-size: 13px; opacity: 0.8;">Google Street View cars haven't mapped this exact spot yet.</p>
-                        </div>`;
+            // Try loading Android-native geo URI pattern, fallback to universal secure sandbox tab if it times out
+            const startTime = Date.now();
+            window.location.href = nativeMapsUrl;
+
+            setTimeout(() => {
+                if (Date.now() - startTime < 1500) {
+                    window.open(webFallbackUrl, '_blank', 'noopener,noreferrer');
                 }
-            });
+            }, 1000);
         }
 
         function startGPS() {
@@ -563,20 +614,25 @@
                         const cacheKey = closestTreasure.lat + ',' + closestTreasure.lng;
 
                         if (distanceMeters <= 50 && distanceMeters > 20) {
+                            if (currentRadarState !== "warm") {
+                                triggerHapticPattern('warm');
+                                currentRadarState = "warm";
+                            }
                             if (!alertedCaches.has('warm_' + cacheKey)) {
                                 Toast.fire({ icon: 'info', title: `Proximity Alert!`, text: `A cache is less than 50m away...` });
                                 alertedCaches.add('warm_' + cacheKey);
-                                playSFX();
                             }
                             statusBadge.innerText = "WARMING UP"; statusBadge.className = "status-badge warm"; claimBtn.style.display = "none";
                         } 
                         else if (distanceMeters <= 20) {
+                            if (currentRadarState !== "burning") {
+                                triggerHapticPattern('burning');
+                                currentRadarState = "burning";
+                            }
                             if (!alertedCaches.has('hot_' + cacheKey)) {
                                 Toast.fire({ icon: 'success', title: `BURNING HOT!`, text: `You are standing right on top of it!` });
                                 alertedCaches.add('hot_' + cacheKey);
-                                playSFX();
                             }
-                            if(statusBadge.className !== "status-badge burning") playSFX(); 
                             
                             if (closestTreasure.creator === myUsername) {
                                 statusBadge.innerText = "YOUR CACHE";
@@ -590,6 +646,7 @@
                             }
                         } 
                         else {
+                            currentRadarState = "freezing";
                             statusBadge.innerText = "FREEZING COLD"; statusBadge.className = "status-badge freezing"; claimBtn.style.display = "none";
                         }
                     }
@@ -650,7 +707,7 @@
 
         document.getElementById('claim-button').addEventListener('click', () => {
             if (!closestTreasure) return;
-            playSFX();
+            triggerHapticPattern('click');
             document.getElementById('review-text').value = '';
             document.getElementById('review-difficulty').value = '3';
             openModal('review-modal');
@@ -667,6 +724,7 @@
                 if (data.error) { popupAlert('Database Error', data.error, 'error'); return; }
                 
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, zIndex: 9999 });
+                triggerHapticPattern('success');
                 popupAlert('🎉 Treasure Found!', 'Review saved. You earned +10 XP!', 'success');
                 
                 if (map) map.removeLayer(closestTreasure.marker);
@@ -686,7 +744,7 @@
             const desc = document.getElementById('cache-desc').value;
             const imgInput = document.getElementById('cache-img');
             if (!title) { popupAlert('Missing Title', 'Please give your cache a name!', 'warning'); return; }
-            playSFX();
+            triggerHapticPattern('click');
 
             const formData = new FormData();
             formData.append('lat', currentLat); formData.append('lng', currentLng);
@@ -698,6 +756,7 @@
 
             fetch('/api/treasures', { method: 'POST', body: formData }).then(res => res.json()).then(data => {
                 if(data.error) { popupAlert('Error saving', data.error, 'error'); return; }
+                triggerHapticPattern('success');
                 popupAlert('Location Hidden!', 'You earned +20 XP for hiding this cache.', 'success');
                 closeModal('add-modal');
                 document.getElementById('cache-title').value = ''; document.getElementById('cache-desc').value = ''; document.getElementById('cache-img').value = '';
@@ -778,8 +837,8 @@
         // ==========================================
         // MODALS & PROFILE
         // ==========================================
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; playSFX(); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; playSFX(); }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; triggerHapticPattern('click'); }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; triggerHapticPattern('click'); }
 
         function openFeed() {
             openModal('feed-modal');
