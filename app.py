@@ -99,7 +99,7 @@ def handle_treasures():
         broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
         return jsonify({"message": "Success"}), 200
 
-# Edit or Delete a Cache (WITH DATABASE LOCK FIX)
+# Edit or Delete a Cache
 @app.route('/api/treasures/<int:t_id>', methods=['PUT', 'DELETE'])
 def manage_treasure(t_id):
     username = request.json.get('username')
@@ -110,14 +110,22 @@ def manage_treasure(t_id):
         return jsonify({"error": "Unauthorized"}), 403
 
     if request.method == 'DELETE':
-        # FIX: Delete all associated player claims first to prevent database lock!
-        supabase.table('claims').delete().eq('treasure_id', t_id).execute()
-        
-        # Now it is safe to permanently delete the cache
-        supabase.table('treasures').delete().eq('id', t_id).execute()
-        add_log(username, f"removed their cache: {t_res.data[0]['title']}")
-        return jsonify({"status": "deleted"}), 200
-        
+        try:
+            # 1. Delete associated player claims first
+            supabase.table('claims').delete().eq('treasure_id', t_id).execute()
+            
+            # 2. Permanently delete the cache
+            del_res = supabase.table('treasures').delete().eq('id', t_id).execute()
+            
+            # FIX: Check if Supabase silently blocked the deletion!
+            if len(del_res.data) == 0:
+                return jsonify({"error": "Supabase blocked the deletion! Please check your table RLS settings."}), 400
+                
+            add_log(username, f"removed their cache: {t_res.data[0]['title']}")
+            return jsonify({"status": "deleted"}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
+            
     elif request.method == 'PUT':
         new_desc = request.json.get('description')
         supabase.table('treasures').update({"description": new_desc}).eq('id', t_id).execute()
