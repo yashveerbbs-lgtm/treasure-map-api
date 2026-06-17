@@ -26,10 +26,9 @@ VAPID_PUBLIC_KEY = os.environ.get("VAPID_PUBLIC_KEY")
 VAPID_PRIVATE_KEY = os.environ.get("VAPID_PRIVATE_KEY")
 VAPID_CLAIM_EMAIL = os.environ.get("VAPID_CLAIM_EMAIL")
 
-# --- HELPER FUNCTION: FIXES THE SPLIT PROFILE BUG ---
+# --- HELPER FUNCTION: CLEANS TITLES FOR MERGING XP ---
 def get_base_username(name):
     if not name: return "Unknown"
-    # Removes the "[Title] " part behind the scenes so backend logic works perfectly
     return re.sub(r'^\[.*?\]\s*', '', name).strip()
 
 @app.route('/')
@@ -104,7 +103,6 @@ def handle_treasures():
         broadcast_notification("New Cache Alert! 🚨", f"{creator} just hid '{title}'. Open the map to find it!", exclude_user=creator)
         return jsonify({"message": "Success"}), 200
 
-# --- FIXED: Edit and Delete Caches Auth Check ---
 @app.route('/api/treasures/<int:t_id>', methods=['PUT', 'DELETE'])
 def manage_treasure(t_id):
     username = request.json.get('username')
@@ -115,7 +113,6 @@ def manage_treasure(t_id):
         
     creator = t_res.data[0]['creator']
     
-    # Checks the base username (Yashveer.20) instead of the title ([Developer] Yashveer.20)
     if get_base_username(creator) != get_base_username(username):
         return jsonify({"error": "Unauthorized"}), 403
 
@@ -144,7 +141,6 @@ def claim_treasure():
     t_res = supabase.table('treasures').select('id, title, creator').eq('id', treasure_id).execute()
     if not t_res.data: return jsonify({"error": "Not found in database"}), 404
     
-    # Prevent claiming your own cache even if you changed titles
     if get_base_username(t_res.data[0]['creator']) == get_base_username(username):
         return jsonify({"error": "You cannot claim your own cache!"}), 403
     
@@ -158,7 +154,6 @@ def claim_treasure():
     broadcast_notification("Cache Discovered! 🗺️", f"{username} just found '{cache_title}'!")
     return jsonify({"status": "success"}), 201
 
-# --- FIXED: Combines XP for Profiles with Titles ---
 @app.route('/api/leaderboard', methods=['GET'])
 def get_leaderboard():
     claims_res = supabase.table('claims').select('username').execute()
@@ -183,7 +178,6 @@ def get_leaderboard():
     leaderboard.sort(key=lambda x: x['score'], reverse=True)
     return jsonify(leaderboard), 200
 
-# --- FIXED: Profile Stats Combines Properly ---
 @app.route('/api/profile/<username>', methods=['GET'])
 def get_profile(username):
     base_user = get_base_username(username)
@@ -224,6 +218,5 @@ def res():
     else: supabase.table('friends').delete().eq('requester', get_base_username(d['requester'])).eq('receiver', get_base_username(d['receiver'])).execute()
     return jsonify({"message": "Done"}), 200
 
-# --- SERVER START GUARD ---
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
